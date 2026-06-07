@@ -36,6 +36,7 @@
 
 # Visual Studio cache directory
 .vs/
+.trae/
 
 # Gradle cache directory
 .gradle/
@@ -105,3 +106,5 @@ InitTestScene*.unity*
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*
 /Assets/StreamingAssets/data
+
+*error*.*
