@@ -75,6 +75,14 @@ namespace Sekai.Core.Live
 			LiveViewExt.OnUpdate(liveViews, currentAudioLatencyMusicTimeMs);
 		}
 
+		private new void OnApplicationPause(bool pauseStatus)
+		{
+			if (pauseStatus)
+			{
+				OnPause();
+			}
+		}
+
 		protected override void OnPause()
 		{
 			if ((state == LiveControllerState.Playing || state == LiveControllerState.ResumeCountDown) && result == 0)
