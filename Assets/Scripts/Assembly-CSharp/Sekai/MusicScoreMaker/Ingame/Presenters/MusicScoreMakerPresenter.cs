@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
@@ -2285,7 +2285,7 @@ namespace Sekai.MusicScoreMaker.Ingame.Presenters
 				_model.FillerSec = 0f;
 			}
 			float playbackStartTime = Mathf.Max(currentTime, 0f) + _model.FillerSec;
-			// OpenSekai: official data keeps secForMusicScoreMaker within the playable BGM range.
+			// OjskCommunity: official data keeps secForMusicScoreMaker within the playable BGM range.
 			// Custom charts can exceed the audio length, so avoid seeking CRI/our shim past EOF.
 			if (_model.MusicLength > 0L && playbackStartTime * 1000f >= _model.MusicLength)
 			{

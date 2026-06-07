@@ -1,6 +1,6 @@
-# OpenSekai
+# Ojsk Community
 
-OpenSekai 是一个用于学习和研究目的的 Project Sekai 音乐游戏玩法复刻项目，目前提供可用的**谱面编辑器**、**第三方歌曲包支持**，以及**从编辑器进入 live 测试游玩**的完整流程。
+Ojsk Community 是一个用于学习和研究目的的 Project Sekai 音乐游戏玩法复刻项目，目前提供可用的**谱面编辑器**、**第三方歌曲包支持**，以及**从编辑器进入 live 测试游玩的完整流程。
 
 ## 开发环境
 
@@ -14,7 +14,7 @@ OpenSekai 是一个用于学习和研究目的的 Project Sekai 音乐游戏玩�
 - `Assets/Resources`：运行时通过 `Resources` 加载的 Prefab、文本、字体、特效和界面数据。
 - `Assets/Sekai/assetbundle/resources`：原样放置的 AssetBundle 源资源，资源本身应保留 AssetBundle 名称，之后通过构建流程打包。
 - `Assets/StreamingAssets`：打包后的 AssetBundle 与本地运行数据输出位置，主要用于构建后的运行环境。
-- `Assets/Editor/OpenSekaiAssetBundleBuildPipeline.cs`：本地 AssetBundle 构建流程。
+- `Assets/Editor/OjskCommunityAssetBundleBuildPipeline.cs`：本地 AssetBundle 构建流程。
 
 ## 资源说明
 

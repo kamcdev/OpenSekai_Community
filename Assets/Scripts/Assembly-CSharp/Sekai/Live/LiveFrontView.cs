@@ -402,7 +402,7 @@ namespace Sekai.Live
 
 			lastScreenWidth = currentWidth;
 			lastScreenHeight = currentHeight;
-			// OpenSekai: desktop windows can be resized during live; keep camera/world-space effects aligned.
+			// OjskCommunity: desktop windows can be resized during live; keep camera/world-space effects aligned.
 			ResolveCameraReferences();
 			cameraSizeUpdater?.ForceUpdate();
 			UpdateBackgroundScale();
@@ -724,7 +724,7 @@ namespace Sekai.Live
 				return;
 			}
 
-			// OpenSekai: the effect camera is disabled after setup, so keep its
+			// OjskCommunity: the effect camera is disabled after setup, so keep its
 			// projection in sync when desktop/mobile resolution changes at runtime.
 			if (Screen.height > 0)
 			{

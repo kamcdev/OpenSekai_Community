@@ -12,14 +12,14 @@ using UnityEngine;
 
 namespace Sekai.EditorTools
 {
-	public static class OpenSekaiAssetBundleBuildPipeline
+	public static class OjskCommunityAssetBundleBuildPipeline
 	{
-		private const string MenuPath = "OpenSekai/AssetBundles/Build AssetBundles And Info";
+		private const string MenuPath = "OjskCommunity/AssetBundles/Build AssetBundles And Info";
 		private const string CacheRootName = "data";
 		private const string DefaultCategory = "StartApp";
 		private const string AssetBundleInfoFileName = "AssetBundleInfo.bytes";
 		private const string StreamingDataRelativePath = "Assets/StreamingAssets/data";
-		private const string TempOutputRelativePath = "Library/OpenSekaiAssetBundles";
+		private const string TempOutputRelativePath = "Library/OjskCommunityAssetBundles";
 
 		[MenuItem(MenuPath)]
 		public static void BuildForActiveTargetMenu()
@@ -64,7 +64,7 @@ namespace Sekai.EditorTools
 			WriteAssetBundleInfo(bytes, streamingDataPath);
 
 			AssetDatabase.Refresh();
-			Debug.Log($"OpenSekai AssetBundles built. target={target}, bundles={info.bundles.Count}, output={StreamingDataRelativePath}");
+			Debug.Log($"OjskCommunity AssetBundles built. target={target}, bundles={info.bundles.Count}, output={StreamingDataRelativePath}");
 			return true;
 		}
 
@@ -237,9 +237,9 @@ namespace Sekai.EditorTools
 	}
 
 	[InitializeOnLoad]
-	internal static class OpenSekaiBuildPlayerHandler
+	internal static class OjskCommunityBuildPlayerHandler
 	{
-		static OpenSekaiBuildPlayerHandler()
+		static OjskCommunityBuildPlayerHandler()
 		{
 			BuildPlayerWindow.RegisterBuildPlayerHandler(BuildPlayerWithAssetBundles);
 		}
@@ -250,22 +250,22 @@ namespace Sekai.EditorTools
 				? options.target
 				: EditorUserBuildSettings.activeBuildTarget;
 
-			OpenSekaiAssetBundleBuildPipeline.BuildForTarget(target, false);
+			OjskCommunityAssetBundleBuildPipeline.BuildForTarget(target, false);
 			BuildPlayerWindow.DefaultBuildMethods.BuildPlayer(options);
 		}
 	}
 
-	internal sealed class OpenSekaiAssetBundleBuildPreprocessor : IPreprocessBuildWithReport
+	internal sealed class OjskCommunityAssetBundleBuildPreprocessor : IPreprocessBuildWithReport
 	{
 		public int callbackOrder => -1000;
 
 		public void OnPreprocessBuild(BuildReport report)
 		{
-			if (!OpenSekaiAssetBundleBuildPipeline.HasPackagedAssetBundleInfo())
+			if (!OjskCommunityAssetBundleBuildPipeline.HasPackagedAssetBundleInfo())
 			{
 				Debug.LogWarning(
-					"OpenSekai AssetBundleInfo was not found in StreamingAssets. " +
-					"Use Unity's Build button or OpenSekai/AssetBundles/Build AssetBundles And Info before scripted builds.");
+					"OjskCommunity AssetBundleInfo was not found in StreamingAssets. " +
+					"Use Unity's Build button or OjskCommunity/AssetBundles/Build AssetBundles And Info before scripted builds.");
 			}
 		}
 	}

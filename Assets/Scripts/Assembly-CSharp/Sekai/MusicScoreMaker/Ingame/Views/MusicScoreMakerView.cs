@@ -237,7 +237,7 @@ namespace Sekai.MusicScoreMaker.Ingame.Views
 			SetScoreDisplayScale();
 
 			// The original value comes from ClientConfig.MusicScoreMaker.LongNoteLinePoolCount.
-			// ClientConfig is not restored in OpenSekai yet, so keep the original fallback count.
+			// ClientConfig is not restored in OjskCommunity yet, so keep the original fallback count.
 			const int longNoteLinePoolCount = 100;
 			if (_musicScorePreview != null)
 			{

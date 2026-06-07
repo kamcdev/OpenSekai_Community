@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -129,6 +129,7 @@ namespace Sekai.CustomMusicScoreManager
 		private TMP_InputField _settingNoteSpeedInput;
 		private TMP_InputField _settingTimingAdjustInput;
 		private TMP_InputField _settingNoteShowRateInput;
+		private TMP_InputField _settingBackgroundBrightnessInput;
 		private TMP_InputField _settingNoteLineAlphaInput;
 		private TMP_InputField _settingGuideLineAlphaInput;
 		private TextMeshProUGUI _settingNoteSkinLabel;
@@ -211,7 +212,7 @@ namespace Sekai.CustomMusicScoreManager
 			RectTransform topBar = CreatePanel("TopBar", root, new Color32(31, 37, 45, 255));
 			SetStretchTop(topBar, 0f, 0f, 0f, 108f);
 
-			TextMeshProUGUI title = CreateText("Title", topBar, $"Open Sekai {Application.version}", 40, FontStyles.Bold, TextAlignmentOptions.Left);
+			TextMeshProUGUI title = CreateText("Title", topBar, $"Ojsk Community {Application.version}", 40, FontStyles.Bold, TextAlignmentOptions.Left);
 			SetAnchor(title.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(36f, 0f), new Vector2(560f, 0f));
 
 			RectTransform toolbar = CreateRect("Toolbar", topBar);
@@ -412,6 +413,7 @@ namespace Sekai.CustomMusicScoreManager
 			_settingNoteSpeedInput = CreateInputField(settingsContent, "音符流速", "1.0 - 12.0");
 			_settingTimingAdjustInput = CreateInputField(settingsContent, "判定偏移", "-20.0 - 20.0");
 			_settingNoteShowRateInput = CreateInputField(settingsContent, "上隐挡板", "0 - 100");
+			_settingBackgroundBrightnessInput = CreateInputField(settingsContent, "背景亮度", "0 - 100");
 			_settingNoteLineAlphaInput = CreateInputField(settingsContent, "长条线不透明度", "10 - 100");
 			_settingGuideLineAlphaInput = CreateInputField(settingsContent, "Guide线不透明度", "10 - 100");
 			CreateSettingNoteSkinSelector(settingsContent);
@@ -450,6 +452,7 @@ namespace Sekai.CustomMusicScoreManager
 			_settingNoteSpeedInput.SetTextWithoutNotify(FormatSettingValue(liveSettingData.NoteSpeed));
 			_settingTimingAdjustInput.SetTextWithoutNotify(FormatSettingValue(liveSettingData.TimingAdjustData));
 			_settingNoteShowRateInput.SetTextWithoutNotify(FormatSettingValue(liveSettingData._noteShowRate * 100f));
+			_settingBackgroundBrightnessInput.SetTextWithoutNotify(FormatSettingValue(liveSettingData.Brightness * 100f));
 			_settingNoteLineAlphaInput.SetTextWithoutNotify(FormatSettingValue(liveSettingData.GetNoteAlpha() * 100f));
 			_settingGuideLineAlphaInput.SetTextWithoutNotify(FormatSettingValue(liveSettingData.GetGuideAlpha() * 100f));
 			SetSettingNoteSkinIndex(liveSettingData.NoteSkinIndex);
@@ -491,6 +494,11 @@ namespace Sekai.CustomMusicScoreManager
 				LiveConfig.MinNoteShowRate,
 				LiveConfig.MaxNoteShowRate,
 				liveSettingData._noteShowRate * 100f));
+			liveSettingData.Brightness = ParseClampedSetting(
+				_settingBackgroundBrightnessInput.text,
+				0f,
+				100f,
+				liveSettingData.Brightness * 100f) / 100f;
 			liveSettingData.NoteAlpha = ParseClampedSetting(
 				_settingNoteLineAlphaInput.text,
 				MinVisualAlphaPercent,
@@ -531,6 +539,7 @@ namespace Sekai.CustomMusicScoreManager
 			_settingNoteSpeedInput.SetTextWithoutNotify(FormatSettingValue(liveSettingData.NoteSpeed));
 			_settingTimingAdjustInput.SetTextWithoutNotify(FormatSettingValue(liveSettingData.TimingAdjustData));
 			_settingNoteShowRateInput.SetTextWithoutNotify(FormatSettingValue(liveSettingData._noteShowRate * 100f));
+			_settingBackgroundBrightnessInput.SetTextWithoutNotify(FormatSettingValue(liveSettingData.Brightness * 100f));
 			_settingNoteLineAlphaInput.SetTextWithoutNotify(FormatSettingValue(liveSettingData.GetNoteAlpha() * 100f));
 			_settingGuideLineAlphaInput.SetTextWithoutNotify(FormatSettingValue(liveSettingData.GetGuideAlpha() * 100f));
 			SetSettingNoteSkinIndex(liveSettingData.NoteSkinIndex);

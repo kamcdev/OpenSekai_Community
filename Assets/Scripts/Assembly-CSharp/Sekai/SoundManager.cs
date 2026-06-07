@@ -277,7 +277,7 @@ namespace Sekai
 					ingameBgmPlayer.SetVolume(masterVolume * bgmVolume);
 					ingameBgmPlayer.SetStartTime(startTimeMs);
 					currentIngamePlayback = ingameBgmPlayer.Start();
-					// OpenSekai: CRI PrepareCore waits in prepared playback until OnMusicStart resumes it.
+					// OjskCommunity: CRI PrepareCore waits in prepared playback until OnMusicStart resumes it.
 					// Our AudioSource shim starts immediately, so hold it during MusicReady.
 					currentIngamePlayback.Pause();
 					audioSyncedUnityTimer = new AudioSyncedUnityTimer(currentIngamePlayback);

@@ -841,7 +841,7 @@ namespace CriWare
 			}
 		}
 
-		// OpenSekai: AudioSource.time and dspTime can advance in large chunks on some Android devices.
+		// OjskCommunity: AudioSource.time and dspTime can advance in large chunks on some Android devices.
 		// Use a process monotonic clock for visual sync while AudioSource still owns actual audio output.
 		private static float GetMonotonicPlaybackTimeSeconds(PlaybackState state)
 		{

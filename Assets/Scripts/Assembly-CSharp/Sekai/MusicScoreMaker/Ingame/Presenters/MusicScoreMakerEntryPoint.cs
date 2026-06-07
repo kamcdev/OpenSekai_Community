@@ -106,7 +106,7 @@ namespace Sekai.MusicScoreMaker.Ingame.Presenters
 			}
 
 			// Original boot flow creates this in SekaiSingletonManager.OnInitialize.
-			// MusicScoreMaker.unity is entered directly in OpenSekai, so mirror just that required input setup here.
+			// MusicScoreMaker.unity is entered directly in OjskCommunity, so mirror just that required input setup here.
 			GameObject prefab = Resources.Load<GameObject>(EventSystemPrefabPath);
 			GameObject eventSystemObject = prefab != null
 				? Instantiate(prefab)

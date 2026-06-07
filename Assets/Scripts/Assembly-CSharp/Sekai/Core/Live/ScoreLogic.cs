@@ -143,7 +143,7 @@ namespace Sekai.Core.Live
 				return;
 			}
 
-			// OpenSekai fallback for custom scores: keep rank thresholds aligned with ScoreGaugeCalculator.Create(1000000).
+			// OjskCommunity fallback for custom scores: keep rank thresholds aligned with ScoreGaugeCalculator.Create(1000000).
 			int rankS = UnityEngine.Mathf.FloorToInt(ScoreGaugeCalculator.RankRateS * DefaultTotalScore);
 			int rankA = UnityEngine.Mathf.FloorToInt(ScoreGaugeCalculator.RankRateA * DefaultTotalScore);
 			int rankB = UnityEngine.Mathf.FloorToInt(ScoreGaugeCalculator.RankRateB * DefaultTotalScore);
