@@ -164,6 +164,14 @@ namespace Sekai.MusicScoreMaker.Ingame.Views
 			UpdateSubWindowCache();
 		}
 
+		public void SetMinimapAudioSamples(float[] samples, long totalTicks, long fillerTicks)
+		{
+			if (_minimapView != null)
+			{
+				_minimapView.SetAudioSamples(samples, totalTicks, fillerTicks);
+			}
+		}
+
 		public void Dispose()
 		{
 			DisposeEventDispatcher();

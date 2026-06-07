@@ -77,6 +77,15 @@ namespace Sekai.CustomMusicScoreManager
 			"10分钟"
 		};
 
+		private const int ScoreMakerPreviewModeTypeCount = 3;
+
+		private static readonly string[] ScoreMakerPreviewModeOptions =
+		{
+			"内容缩略图",
+			"音频波形图",
+			"叠加"
+		};
+
 		private const float MinVisualAlphaPercent = 10f;
 
 		private const float MaxVisualAlphaPercent = 100f;
@@ -147,6 +156,8 @@ namespace Sekai.CustomMusicScoreManager
 		private TMP_InputField _settingGuideLineAlphaInput;
 		private TextMeshProUGUI _settingAutoSaveIntervalLabel;
 		private int _settingAutoSaveIntervalIndex;
+		private TextMeshProUGUI _settingScoreMakerPreviewModeLabel;
+		private int _settingScoreMakerPreviewModeIndex;
 		private TextMeshProUGUI _settingNoteSkinLabel;
 		private int _settingNoteSkinIndex;
 		private TextMeshProUGUI _settingNoteSeLabel;
@@ -437,6 +448,7 @@ namespace Sekai.CustomMusicScoreManager
 			CreateSettingNoteEffectSelector(settingsContent);
 			CreateSettingSimultaneousLineSelector(settingsContent);
 			CreateSettingMusicInfoDisplayModeSelector(settingsContent);
+			CreateSettingScoreMakerPreviewModeSelector(settingsContent);
 			CreateSettingLiveBackgroundModeSelector(settingsContent);
 			CreateSettingFastLateFlickSelector(settingsContent);
 			CreateSettingFullscreenSelector(settingsContent);
@@ -472,6 +484,7 @@ namespace Sekai.CustomMusicScoreManager
 			_settingNoteLineAlphaInput.SetTextWithoutNotify(FormatSettingValue(liveSettingData.GetNoteAlpha() * 100f));
 			_settingGuideLineAlphaInput.SetTextWithoutNotify(FormatSettingValue(liveSettingData.GetGuideAlpha() * 100f));
 			SetAutoSaveInterval(liveSettingData.AutoSaveIntervalIndex);
+			SetScoreMakerPreviewMode(liveSettingData.ScoreMakerPreviewModeIndex);
 			SetSettingNoteSkinIndex(liveSettingData.NoteSkinIndex);
 			SetSettingNoteSeIndex(liveSettingData.NoteSeIndex);
 			SetSettingNoteEffectIndex(liveSettingData.NoteEffect);
@@ -528,6 +541,7 @@ namespace Sekai.CustomMusicScoreManager
 				liveSettingData.GetGuideAlpha() * 100f) / 100f;
 			liveSettingData.NoteSkinIndex = _settingNoteSkinIndex;
 			liveSettingData.AutoSaveIntervalIndex = _settingAutoSaveIntervalIndex;
+			liveSettingData.ScoreMakerPreviewModeIndex = _settingScoreMakerPreviewModeIndex;
 			liveSettingData.NoteSeIndex = _settingNoteSeIndex;
 			liveSettingData.NoteEffect = _settingNoteEffectIndex;
 			liveSettingData.UseSimultaneousPushingLine = _settingSimultaneousLineEnabled;
@@ -551,6 +565,7 @@ namespace Sekai.CustomMusicScoreManager
 			LiveConfig.SetNoteSkinAssetBundleName(liveSettingData.NoteSkinIndex);
 			LiveConfig.SetNoteSeName(liveSettingData.NoteSeIndex);
 			LiveConfig.SetNoteEffectName(liveSettingData.NoteEffect);
+			LiveConfig.ScoreMakerPreviewModeIndex = liveSettingData.ScoreMakerPreviewModeIndex;
 
 			_settingLiveBgmInput.SetTextWithoutNotify(FormatSettingValue(liveVolume.Bgm));
 			_settingLiveSeInput.SetTextWithoutNotify(FormatSettingValue(liveVolume.Se));
@@ -561,6 +576,7 @@ namespace Sekai.CustomMusicScoreManager
 			_settingNoteLineAlphaInput.SetTextWithoutNotify(FormatSettingValue(liveSettingData.GetNoteAlpha() * 100f));
 			_settingGuideLineAlphaInput.SetTextWithoutNotify(FormatSettingValue(liveSettingData.GetGuideAlpha() * 100f));
 			SetAutoSaveInterval(liveSettingData.AutoSaveIntervalIndex);
+			SetScoreMakerPreviewMode(liveSettingData.ScoreMakerPreviewModeIndex);
 			SetSettingNoteSkinIndex(liveSettingData.NoteSkinIndex);
 			SetSettingNoteSeIndex(liveSettingData.NoteSeIndex);
 			SetSettingNoteEffectIndex(liveSettingData.NoteEffect);
@@ -626,6 +642,48 @@ namespace Sekai.CustomMusicScoreManager
 			if (_settingAutoSaveIntervalLabel != null)
 			{
 				_settingAutoSaveIntervalLabel.text = AutoSaveIntervalOptions[_settingAutoSaveIntervalIndex];
+			}
+		}
+
+		private void CreateSettingScoreMakerPreviewModeSelector(Transform parent)
+		{
+			RectTransform row = CreateRect("ScoreMakerPreviewModeSelector", parent);
+			LayoutElement rowLayout = row.gameObject.AddComponent<LayoutElement>();
+			rowLayout.preferredHeight = 58f;
+			rowLayout.minHeight = 58f;
+
+			HorizontalLayoutGroup rowGroup = row.gameObject.AddComponent<HorizontalLayoutGroup>();
+			rowGroup.spacing = 16f;
+			rowGroup.childAlignment = TextAnchor.MiddleLeft;
+			rowGroup.childControlWidth = true;
+			rowGroup.childControlHeight = true;
+			rowGroup.childForceExpandWidth = false;
+			rowGroup.childForceExpandHeight = false;
+
+			TextMeshProUGUI title = CreateText("Label", row, "制谱器预览方式", 24, FontStyles.Bold, TextAlignmentOptions.Left);
+			LayoutElement titleLayout = title.gameObject.AddComponent<LayoutElement>();
+			titleLayout.preferredWidth = 180f;
+			titleLayout.minWidth = 180f;
+			titleLayout.preferredHeight = 58f;
+			titleLayout.minHeight = 58f;
+
+			Button button = CreateButton("Button", row, string.Empty, CycleScoreMakerPreviewMode, 220f, 54f);
+			_settingScoreMakerPreviewModeLabel = button.GetComponentInChildren<TextMeshProUGUI>();
+			SetScoreMakerPreviewMode(0);
+		}
+
+		private void CycleScoreMakerPreviewMode()
+		{
+			SetScoreMakerPreviewMode((_settingScoreMakerPreviewModeIndex + 1) % ScoreMakerPreviewModeTypeCount);
+		}
+
+		private void SetScoreMakerPreviewMode(int index)
+		{
+			_settingScoreMakerPreviewModeIndex = Mathf.Clamp(index, 0, ScoreMakerPreviewModeTypeCount - 1);
+			LiveConfig.ScoreMakerPreviewModeIndex = _settingScoreMakerPreviewModeIndex;
+			if (_settingScoreMakerPreviewModeLabel != null)
+			{
+				_settingScoreMakerPreviewModeLabel.text = ScoreMakerPreviewModeOptions[_settingScoreMakerPreviewModeIndex];
 			}
 		}
 

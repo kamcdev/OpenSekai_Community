@@ -97,6 +97,14 @@ namespace Sekai.Live
 
 		public static float GuideAlpha;
 
+		public const int ScoreMakerPreviewModeThumbnail = 0;
+
+		public const int ScoreMakerPreviewModeWaveform = 1;
+
+		public const int ScoreMakerPreviewModeOverlay = 2;
+
+		public static int ScoreMakerPreviewModeIndex;
+
 		public static readonly string[] TimelineBundleNames;
 
 		public static readonly Vector2 SpawnPosition;
@@ -253,6 +261,7 @@ namespace Sekai.Live
 			SetNoteSeName(liveSettingData.NoteSeIndex);
 			SetNoteEffectName(liveSettingData.NoteEffect);
 			SetFeverEffectName(liveSettingData.FeverEffectTypeIndex);
+			ScoreMakerPreviewModeIndex = liveSettingData.ScoreMakerPreviewModeIndex;
 			CacheSpeedTime = 0f;
 			CacheTimingTime = 0f;
 			NoteSpeedOffset = 0.04f;

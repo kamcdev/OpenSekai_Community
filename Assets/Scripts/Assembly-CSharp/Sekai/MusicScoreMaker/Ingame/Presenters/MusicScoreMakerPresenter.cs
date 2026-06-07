@@ -2885,6 +2885,7 @@ namespace Sekai.MusicScoreMaker.Ingame.Presenters
 			if (_model.LiveSettings != null)
 			{
 				_model.TimingAdjust = _model.LiveSettings.TimingAdjustData * (1f / 60f);
+				LiveConfig.ScoreMakerPreviewModeIndex = _model.LiveSettings.ScoreMakerPreviewModeIndex;
 			}
 			if (_model.CustomMusicScoreEntry != null)
 			{
@@ -2955,6 +2956,19 @@ namespace Sekai.MusicScoreMaker.Ingame.Presenters
 			_model.UpdateComboCountMinimum(_model.MasterMusicSec);
 			SetFocusTicks(_model.FocusTicks);
 			NotifyMusicScoreAndTimelineChanged(refresh: true);
+			if (audioRegistered)
+			{
+				float[] samples = entry.GetAudioSamples(4096);
+				if (samples != null && _model.MusicScoreMakerData != null)
+				{
+					List<MusicScoreEventData> events = _model.MusicScoreMakerData.MusicScoreEventDataList;
+					float audioDurationSec = entry.AudioLengthMs / 1000f;
+					float fillerSec = _model.FillerSec;
+					long totalTicks = MusicScoreMakerUtility.GetTicksFromTime(audioDurationSec, events);
+					long fillerTicks = MusicScoreMakerUtility.GetTicksFromTime(fillerSec, events);
+					_view?.MusicScorePreview?.SetMinimapAudioSamples(samples, totalTicks, fillerTicks);
+				}
+			}
 			await UniTask.Yield();
 			_musicReadyCts?.Dispose();
 			_musicReadyCts = null;

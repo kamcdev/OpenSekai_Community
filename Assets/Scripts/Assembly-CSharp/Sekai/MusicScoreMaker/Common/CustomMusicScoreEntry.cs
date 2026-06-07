@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Threading;
 using CP;
@@ -106,6 +106,50 @@ namespace Sekai.MusicScoreMaker.Common
 			AudioLengthMs = (long)(_audioClip.length * 1000f);
 			SoundManager.Instance.RegisterExternalAudioClip(AudioCueName, AudioCueName, _audioClip);
 			return true;
+		}
+
+		public float[] GetAudioSamples(int sampleCount)
+		{
+			if (_audioClip == null || sampleCount <= 0)
+			{
+				return null;
+			}
+
+			float[] samples = new float[sampleCount];
+			float[] channelData = new float[_audioClip.samples * _audioClip.channels];
+			if (!_audioClip.GetData(channelData, 0))
+			{
+				return null;
+			}
+
+			int samplesPerPixel = channelData.Length / sampleCount;
+			if (samplesPerPixel < 1)
+			{
+				samplesPerPixel = 1;
+			}
+
+			for (int i = 0; i < sampleCount; i++)
+			{
+				int startIndex = i * samplesPerPixel;
+				float maxAmplitude = 0f;
+				int endIndex = Mathf.Min(startIndex + samplesPerPixel, channelData.Length);
+				for (int j = startIndex; j < endIndex; j++)
+				{
+					float absValue = Mathf.Abs(channelData[j]);
+					if (absValue > maxAmplitude)
+					{
+						maxAmplitude = absValue;
+					}
+				}
+				samples[i] = maxAmplitude;
+			}
+
+			return samples;
+		}
+
+		public AudioClip GetAudioClip()
+		{
+			return _audioClip;
 		}
 
 		private async UniTask<AudioClip> LoadAudioClipAsync(CancellationToken token)

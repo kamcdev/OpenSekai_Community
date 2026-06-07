@@ -74,6 +74,9 @@ namespace Sekai
 		[Key("AutoSaveIntervalIndex")]
 		public int AutoSaveIntervalIndex { get; set; }
 
+		[Key("ScoreMakerPreviewModeIndex")]
+		public int ScoreMakerPreviewModeIndex { get; set; }
+
 		[Key("NoteSeIndex")]
 		public int NoteSeIndex { get; set; }
 
@@ -177,6 +180,7 @@ namespace Sekai
 			NoteAlpha = 1f;
 			GuideAlpha = 0.6f;
 			AutoSaveIntervalIndex = 0;
+			ScoreMakerPreviewModeIndex = 0;
 			CustomRoomIsDisplayPlayerInfo = true;
 			UseCutIn = true;
 			LiveMode = LiveModeType.Default3D;
