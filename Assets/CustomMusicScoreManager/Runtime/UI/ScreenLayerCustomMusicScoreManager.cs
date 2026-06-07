@@ -7,6 +7,7 @@ using Sekai.Live;
 using Sekai.MusicScoreMaker.Common;
 using Sekai.MusicScoreMaker.Ingame.Models;
 using Sekai.MusicScoreMaker.Ingame.Presenters;
+using Sekai.UI;
 using SFB;
 using TMPro;
 using UnityEngine;
@@ -237,7 +238,7 @@ namespace Sekai.CustomMusicScoreManager
 			toolbarLayout.childControlHeight = false;
 			toolbarLayout.spacing = 14f;
 			CreateButton("SettingsButton", toolbar, "设置", OpenSettings, 150f, 56f);
-			CreateButton("RefreshButton", toolbar, "刷新", RefreshList, 150f, 56f);
+			CreateButton("RefreshButton", toolbar, "刷新", RefreshButtonClicked, 150f, 56f);
 			CreateButton("NewButton", toolbar, "新建", CreateEntry, 132f, 56f);
 			CreateButton("ImportButton", toolbar, "导入", ImportEntry, 150f, 56f);
 
@@ -570,6 +571,7 @@ namespace Sekai.CustomMusicScoreManager
 			SetSettingFullscreen(localSettings.FullscreenEnabled ?? Screen.fullScreen);
 			CloseSettings();
 			SetStatus("设置已保存。");
+			ShowSuccessDialog("设置已保存。");
 		}
 
 		private static float ParseClampedSetting(string text, float min, float max, float fallback)
@@ -1133,6 +1135,13 @@ namespace Sekai.CustomMusicScoreManager
 			return 1;
 		}
 
+		private void RefreshButtonClicked()
+		{
+			RefreshList();
+			string statusMessage = "已加载 " + _items.Count.ToString(CultureInfo.InvariantCulture) + " 个谱面。";
+			ShowSuccessDialog(statusMessage);
+		}
+
 		private void RefreshList()
 		{
 			_items = CustomMusicScoreManagerService.LoadItems();
@@ -1544,6 +1553,7 @@ namespace Sekai.CustomMusicScoreManager
 			_selected = entry == null ? null : new CustomMusicScoreManagerItem(entry, DateTime.Now, true, File.Exists(entry.ScorePath), File.Exists(entry.AudioPath), File.Exists(entry.JacketPath));
 			RefreshList();
 			SetStatus("已复制谱面。");
+			ShowSuccessDialog("已复制谱面。");
 		}
 
 		private void DeleteSelected()
@@ -1607,12 +1617,122 @@ namespace Sekai.CustomMusicScoreManager
 			}
 
 			string path = CustomMusicScoreManagerService.ExportZip(_selected.Entry, destination);
-			SetStatus(string.IsNullOrEmpty(path) ? "导出失败。" : "已导出：" + path);
+			if (string.IsNullOrEmpty(path))
+			{
+				SetStatus("导出失败。");
+				ShowExportFailedDialog();
+			}
+			else
+			{
+				SetStatus("已导出：" + path);
+				AskShareAfterExport(path);
+			}
 #elif UNITY_ANDROID || UNITY_IOS
 			ExportSelectedNative();
 #else
 			string path = CustomMusicScoreManagerService.ExportZip(_selected.Entry);
-			SetStatus(string.IsNullOrEmpty(path) ? "导出失败。" : "已导出：" + path);
+			if (string.IsNullOrEmpty(path))
+			{
+				SetStatus("导出失败。");
+				ShowExportFailedDialog();
+			}
+			else
+			{
+				SetStatus("已导出：" + path);
+				AskShareAfterExport(path);
+			}
+#endif
+		}
+
+		private void ShowExportFailedDialog()
+		{
+			ScreenManager.Instance?.Show1ButtonDialog<Common1ButtonDialog>(
+				DialogType.Common1ButtonDialog,
+				null,
+				"WORD_DECIDE",
+				null,
+				DisplayLayerType.Layer_Dialog,
+				DialogSize.Manual,
+				true)?.SetMessageBodyText("导出失败，请重试。");
+		}
+
+		private void AskShareAfterExport(string path)
+		{
+			Common2ButtonDialog dialog = ScreenManager.Instance?.Show2ButtonDialog<Common2ButtonDialog>(
+				DialogType.Common2ButtonDialog,
+				() => OnShareConfirmed(path),
+				null,
+				DisplayLayerType.Layer_Dialog,
+				DialogSize.Manual,
+				true);
+			dialog?.SetMessageBodyText("是否立即分享谱面？");
+		}
+
+		private void OnShareConfirmed(string path)
+		{
+#if UNITY_ANDROID
+			ShareFileAndroid(path);
+#elif UNITY_STANDALONE || UNITY_EDITOR
+			OpenInExplorer(path);
+#endif
+		}
+
+		private void OpenInExplorer(string path)
+		{
+#if UNITY_STANDALONE || UNITY_EDITOR
+			try
+			{
+				string directory = Path.GetDirectoryName(path);
+				if (!string.IsNullOrEmpty(directory) && Directory.Exists(directory))
+				{
+					System.Diagnostics.Process.Start("explorer.exe", "/select,\"" + path + "\"");
+				}
+			}
+			catch (Exception)
+			{
+				SetStatus("无法打开文件资源管理器。");
+			}
+#endif
+		}
+
+		private void ShareFileAndroid(string path)
+		{
+#if UNITY_ANDROID
+			try
+			{
+				using (AndroidJavaClass intentClass = new AndroidJavaClass("android.content.Intent"))
+				{
+					using (AndroidJavaObject intentObject = new AndroidJavaObject("android.content.Intent"))
+					{
+						intentObject.Call<AndroidJavaObject>("setAction", intentClass.GetStatic<string>("ACTION_SEND"));
+						intentObject.Call<AndroidJavaObject>("setType", "application/zip");
+
+						using (AndroidJavaClass uriClass = new AndroidJavaClass("android.net.Uri"))
+						{
+							using (AndroidJavaObject fileObject = new AndroidJavaObject("java.io.File", path))
+							{
+								using (AndroidJavaObject uriObject = uriClass.CallStatic<AndroidJavaObject>("fromFile", fileObject))
+								{
+									intentObject.Call<AndroidJavaObject>("putExtra", intentClass.GetStatic<string>("EXTRA_STREAM"), uriObject);
+									intentObject.Call<AndroidJavaObject>("addFlags", intentClass.GetStatic<int>("FLAG_GRANT_READ_URI_PERMISSION"));
+								}
+							}
+						}
+
+						using (AndroidJavaClass unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
+						{
+							using (AndroidJavaObject currentActivity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity"))
+							{
+								currentActivity.Call("startActivity", intentObject);
+							}
+						}
+					}
+				}
+			}
+			catch (Exception)
+			{
+				SetStatus("分享失败。");
+			}
 #endif
 		}
 
@@ -1657,6 +1777,7 @@ namespace Sekai.CustomMusicScoreManager
 				_selected = new CustomMusicScoreManagerItem(entry, DateTime.Now, true, File.Exists(entry.ScorePath), File.Exists(entry.AudioPath), File.Exists(entry.JacketPath));
 				RefreshList();
 				SetStatus("已导入谱面。");
+				ShowSuccessDialog("已导入谱面。");
 			}
 			else
 			{
@@ -1822,12 +1943,14 @@ namespace Sekai.CustomMusicScoreManager
 			if (string.IsNullOrEmpty(path))
 			{
 				SetStatus("导出失败。");
+				ShowExportFailedDialog();
 				return;
 			}
 
 			if (!NativeFilePicker.CanExportFiles())
 			{
 				SetStatus("当前平台不支持文件导出，已导出到：" + path);
+				AskShareAfterExport(path);
 				return;
 			}
 
@@ -1839,7 +1962,15 @@ namespace Sekai.CustomMusicScoreManager
 					return;
 				}
 
-				SetStatus(success ? "已导出：" + path : "导出已取消或失败。");
+				if (success)
+				{
+					SetStatus("已导出：" + path);
+					AskShareAfterExport(path);
+				}
+				else
+				{
+					SetStatus("导出已取消或失败。");
+				}
 			});
 		}
 
@@ -1960,7 +2091,12 @@ namespace Sekai.CustomMusicScoreManager
 		private void SaveSelectedManifest()
 		{
 			CustomMusicScoreEntry savedEntry = SaveSelectedManifestFromForm(refreshList: true);
-			SetStatus(savedEntry != null ? "配置已保存。" : "保存配置失败。");
+			string statusMessage = savedEntry != null ? "配置已保存。" : "保存配置失败。";
+			SetStatus(statusMessage);
+			if (savedEntry != null)
+			{
+				ShowSuccessDialog("配置已保存。");
+			}
 		}
 
 		private CustomMusicScoreEntry SaveSelectedManifestFromForm(bool refreshList)
@@ -2146,6 +2282,19 @@ namespace Sekai.CustomMusicScoreManager
 			{
 				_statusText.text = message ?? string.Empty;
 			}
+		}
+
+		private void ShowSuccessDialog(string message)
+		{
+			Common1ButtonDialog dialog = ScreenManager.Instance?.Show1ButtonDialog<Common1ButtonDialog>(
+				DialogType.Common1ButtonDialog,
+				null,
+				"WORD_DECIDE",
+				null,
+				DisplayLayerType.Layer_Dialog,
+				DialogSize.Manual,
+				true);
+			dialog?.SetMessageBodyText(message);
 		}
 
 		private static TMP_InputField CreateInputField(Transform parent, string label, string placeholder)
