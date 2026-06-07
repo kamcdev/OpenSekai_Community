@@ -1988,10 +1988,9 @@ namespace Sekai.CustomMusicScoreManager
 		}
 #endif
 
-#if UNITY_ANDROID || UNITY_IOS
+#if UNITY_ANDROID
 		private void ExportSelectedNative()
 		{
-#if UNITY_ANDROID
 			string path = CustomMusicScoreManagerService.ExportZip(_selected.Entry);
 			if (string.IsNullOrEmpty(path))
 			{
@@ -2029,6 +2028,8 @@ namespace Sekai.CustomMusicScoreManager
 			}
 		}
 #elif UNITY_IOS
+		private void ExportSelectedNative()
+		{
 			if (NativeFilePicker.IsFilePickerBusy())
 			{
 				SetStatus("文件选择器已经打开。");
@@ -2068,8 +2069,13 @@ namespace Sekai.CustomMusicScoreManager
 					SetStatus("导出已取消或失败。");
 				}
 			});
-#endif
 		}
+#else
+		private void ExportSelectedNative()
+		{
+			ExportSelectedDesktop();
+		}
+#endif
 
 		private void PickNativeFile(string title, string cancelStatus, Action<string> onPicked, params string[] extensions)
 		{
@@ -2152,7 +2158,6 @@ namespace Sekai.CustomMusicScoreManager
 				fileTypes.Add(fileType);
 			}
 		}
-#endif
 #endif
 
 		private void ReplaceSelectedFile(
