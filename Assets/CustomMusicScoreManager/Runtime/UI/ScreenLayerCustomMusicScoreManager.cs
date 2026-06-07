@@ -64,6 +64,18 @@ namespace Sekai.CustomMusicScoreManager
 
 		private const int NoteEffectTypeCount = 2;
 
+		private const int AutoSaveIntervalTypeCount = 6;
+
+		private static readonly string[] AutoSaveIntervalOptions =
+		{
+			"关闭",
+			"2分钟",
+			"4分钟",
+			"6分钟",
+			"8分钟",
+			"10分钟"
+		};
+
 		private const float MinVisualAlphaPercent = 10f;
 
 		private const float MaxVisualAlphaPercent = 100f;
@@ -132,6 +144,8 @@ namespace Sekai.CustomMusicScoreManager
 		private TMP_InputField _settingBackgroundBrightnessInput;
 		private TMP_InputField _settingNoteLineAlphaInput;
 		private TMP_InputField _settingGuideLineAlphaInput;
+		private TextMeshProUGUI _settingAutoSaveIntervalLabel;
+		private int _settingAutoSaveIntervalIndex;
 		private TextMeshProUGUI _settingNoteSkinLabel;
 		private int _settingNoteSkinIndex;
 		private TextMeshProUGUI _settingNoteSeLabel;
@@ -416,6 +430,7 @@ namespace Sekai.CustomMusicScoreManager
 			_settingBackgroundBrightnessInput = CreateInputField(settingsContent, "背景亮度", "0 - 100");
 			_settingNoteLineAlphaInput = CreateInputField(settingsContent, "长条线不透明度", "10 - 100");
 			_settingGuideLineAlphaInput = CreateInputField(settingsContent, "Guide线不透明度", "10 - 100");
+			CreateSettingAutoSaveIntervalSelector(settingsContent);
 			CreateSettingNoteSkinSelector(settingsContent);
 			CreateSettingNoteSeSelector(settingsContent);
 			CreateSettingNoteEffectSelector(settingsContent);
@@ -455,6 +470,7 @@ namespace Sekai.CustomMusicScoreManager
 			_settingBackgroundBrightnessInput.SetTextWithoutNotify(FormatSettingValue(liveSettingData.Brightness * 100f));
 			_settingNoteLineAlphaInput.SetTextWithoutNotify(FormatSettingValue(liveSettingData.GetNoteAlpha() * 100f));
 			_settingGuideLineAlphaInput.SetTextWithoutNotify(FormatSettingValue(liveSettingData.GetGuideAlpha() * 100f));
+			SetAutoSaveInterval(liveSettingData.AutoSaveIntervalIndex);
 			SetSettingNoteSkinIndex(liveSettingData.NoteSkinIndex);
 			SetSettingNoteSeIndex(liveSettingData.NoteSeIndex);
 			SetSettingNoteEffectIndex(liveSettingData.NoteEffect);
@@ -510,6 +526,7 @@ namespace Sekai.CustomMusicScoreManager
 				MaxVisualAlphaPercent,
 				liveSettingData.GetGuideAlpha() * 100f) / 100f;
 			liveSettingData.NoteSkinIndex = _settingNoteSkinIndex;
+			liveSettingData.AutoSaveIntervalIndex = _settingAutoSaveIntervalIndex;
 			liveSettingData.NoteSeIndex = _settingNoteSeIndex;
 			liveSettingData.NoteEffect = _settingNoteEffectIndex;
 			liveSettingData.UseSimultaneousPushingLine = _settingSimultaneousLineEnabled;
@@ -542,6 +559,7 @@ namespace Sekai.CustomMusicScoreManager
 			_settingBackgroundBrightnessInput.SetTextWithoutNotify(FormatSettingValue(liveSettingData.Brightness * 100f));
 			_settingNoteLineAlphaInput.SetTextWithoutNotify(FormatSettingValue(liveSettingData.GetNoteAlpha() * 100f));
 			_settingGuideLineAlphaInput.SetTextWithoutNotify(FormatSettingValue(liveSettingData.GetGuideAlpha() * 100f));
+			SetAutoSaveInterval(liveSettingData.AutoSaveIntervalIndex);
 			SetSettingNoteSkinIndex(liveSettingData.NoteSkinIndex);
 			SetSettingNoteSeIndex(liveSettingData.NoteSeIndex);
 			SetSettingNoteEffectIndex(liveSettingData.NoteEffect);
@@ -566,6 +584,47 @@ namespace Sekai.CustomMusicScoreManager
 		private static string FormatSettingValue(float value)
 		{
 			return value.ToString("0.###", CultureInfo.InvariantCulture);
+		}
+
+		private void CreateSettingAutoSaveIntervalSelector(Transform parent)
+		{
+			RectTransform row = CreateRect("AutoSaveIntervalSelector", parent);
+			LayoutElement rowLayout = row.gameObject.AddComponent<LayoutElement>();
+			rowLayout.preferredHeight = 58f;
+			rowLayout.minHeight = 58f;
+
+			HorizontalLayoutGroup rowGroup = row.gameObject.AddComponent<HorizontalLayoutGroup>();
+			rowGroup.spacing = 16f;
+			rowGroup.childAlignment = TextAnchor.MiddleLeft;
+			rowGroup.childControlWidth = true;
+			rowGroup.childControlHeight = true;
+			rowGroup.childForceExpandWidth = false;
+			rowGroup.childForceExpandHeight = false;
+
+			TextMeshProUGUI title = CreateText("Label", row, "自动保存间隔", 24, FontStyles.Bold, TextAlignmentOptions.Left);
+			LayoutElement titleLayout = title.gameObject.AddComponent<LayoutElement>();
+			titleLayout.preferredWidth = 180f;
+			titleLayout.minWidth = 180f;
+			titleLayout.preferredHeight = 58f;
+			titleLayout.minHeight = 58f;
+
+			Button button = CreateButton("Button", row, string.Empty, CycleAutoSaveInterval, 220f, 54f);
+			_settingAutoSaveIntervalLabel = button.GetComponentInChildren<TextMeshProUGUI>();
+			SetAutoSaveInterval(0);
+		}
+
+		private void CycleAutoSaveInterval()
+		{
+			SetAutoSaveInterval((_settingAutoSaveIntervalIndex + 1) % AutoSaveIntervalTypeCount);
+		}
+
+		private void SetAutoSaveInterval(int index)
+		{
+			_settingAutoSaveIntervalIndex = Mathf.Clamp(index, 0, AutoSaveIntervalTypeCount - 1);
+			if (_settingAutoSaveIntervalLabel != null)
+			{
+				_settingAutoSaveIntervalLabel.text = AutoSaveIntervalOptions[_settingAutoSaveIntervalIndex];
+			}
 		}
 
 		private void CreateSettingNoteSkinSelector(Transform parent)

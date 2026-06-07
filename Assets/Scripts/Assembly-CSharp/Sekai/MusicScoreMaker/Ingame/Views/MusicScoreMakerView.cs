@@ -143,6 +143,12 @@ namespace Sekai.MusicScoreMaker.Ingame.Views
 		private CustomButton _redoButton;
 
 		[SerializeField]
+		private CustomButton _saveButton;
+
+		[SerializeField]
+		private CustomButton _testPlayButton;
+
+		[SerializeField]
 		private UIPartsLeftTabList _leftTabList;
 
 		private static readonly IsEditRestrictedEvent IsEditRestrictedEventCache;
@@ -220,6 +226,30 @@ namespace Sekai.MusicScoreMaker.Ingame.Views
 			get
 			{
 				return _musicPlayTimeView;
+			}
+		}
+
+		public CustomButton SaveButton
+		{
+			get
+			{
+				return _saveButton;
+			}
+		}
+
+		public CustomButton ExitButton
+		{
+			get
+			{
+				return _backButton;
+			}
+		}
+
+		public CustomButton TestPlayButton
+		{
+			get
+			{
+				return _testPlayButton;
 			}
 		}
 

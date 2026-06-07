@@ -8,6 +8,7 @@ using System.Threading;
 using CriWare;
 using Cysharp.Threading.Tasks;
 using Cysharp.Threading.Tasks.CompilerServices;
+using DG.Tweening;
 using JetBrains.Annotations;
 using Sekai.ApiData;
 using Sekai.Live;
@@ -17,6 +18,7 @@ using Sekai.MusicScoreMaker.Ingame.Models;
 using Sekai.MusicScoreMaker.Ingame.Utilities;
 using Sekai.MusicScoreMaker.Ingame.Views;
 using Sekai.Service;
+using Sekai.UI;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using MusicScorePreviewPlayData = Sekai.MusicScoreMaker.OutGame.MusicScorePreviewPlayData;
@@ -1241,6 +1243,7 @@ namespace Sekai.MusicScoreMaker.Ingame.Presenters
 			if (MusicScoreMakerEventDispatcher.ExistsInstance)
 			{
 				MusicScoreMakerEventDispatcher.Instance.ClearSavedUndoRedoStackIfNotTestPlay();
+				MusicScoreMakerEventDispatcher.Instance.StopAutoSaveTimer();
 				MusicScoreMakerEventDispatcher.Instance.Dispose();
 			}
 		}
@@ -1294,6 +1297,10 @@ namespace Sekai.MusicScoreMaker.Ingame.Presenters
 			if (MusicScoreMakerEventDispatcher.ExistsInstance)
 			{
 				MusicScoreMakerEventDispatcher.Instance.ResetAutoSaveTimer();
+				if (LiveSettingData.LoadFromStorage().AutoSaveIntervalIndex > 0)
+				{
+					MusicScoreMakerEventDispatcher.Instance.StartAutoSaveTimer();
+				}
 			}
 
 			_isFinishedFadeBGM = true;
@@ -1314,7 +1321,23 @@ namespace Sekai.MusicScoreMaker.Ingame.Presenters
 			{
 				_view.SetUpdatePresenterAction(Update);
 			}
+			ShowAutoSaveDisabledWarningIfNeeded();
 			MusicScoreMakerRuleSlideTutorialUtility.TryShowTutorialSlideIfFirstTime("music_score_maker");
+		}
+
+		private void ShowAutoSaveDisabledWarningIfNeeded()
+		{
+			if (LiveSettingData.LoadFromStorage().AutoSaveIntervalIndex == 0)
+			{
+				Common2ButtonDialog dialog = ScreenManager.Instance?.Show2ButtonDialog<Common2ButtonDialog>(
+					DialogType.Common2ButtonDialog,
+					null,
+					null,
+					DisplayLayerType.Layer_Dialog,
+					DialogSize.Manual,
+					allowCloseExternal: true);
+				dialog?.SetMessageBodyText("当前未开启自动保存，为防止数据丢失，可在「设置」>「自动保存间隔」开启自动保存功能");
+			}
 		}
 
 		private async UniTask WaitMusicReadyCore(CancellationToken token)
@@ -7277,6 +7300,31 @@ namespace Sekai.MusicScoreMaker.Ingame.Presenters
 		private void AutoSaveMusicScore(AutoSaveMusicScoreEvent e)
 		{
 			SaveMusicScore(MusicScoreMakerRepository.GenerateAutoSaveFileName());
+			FlashSaveButtonForAutoSave().Forget();
+		}
+
+		private async UniTask FlashSaveButtonForAutoSave()
+		{
+			CustomButton saveButton = _view?.SaveButton;
+			CustomButton exitButton = _view?.ExitButton;
+			CustomButton testPlayButton = _view?.TestPlayButton;
+			if (saveButton == null || exitButton == null || testPlayButton == null)
+			{
+				return;
+			}
+			saveButton.interactable = false;
+			exitButton.interactable = false;
+			testPlayButton.interactable = false;
+			for (int i = 0; i < 3; i++)
+			{
+				saveButton.transform.localScale = new Vector3(0.95f, 0.95f, 1f);
+				await UniTask.Delay(100);
+				saveButton.transform.localScale = Vector3.one;
+				await UniTask.Delay(100);
+			}
+			saveButton.interactable = true;
+			exitButton.interactable = true;
+			testPlayButton.interactable = true;
 		}
 
 		private void QuickSaveMusicScore(QuickSaveMusicScoreEvent e)
