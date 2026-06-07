@@ -1991,6 +1991,44 @@ namespace Sekai.CustomMusicScoreManager
 #if UNITY_ANDROID || UNITY_IOS
 		private void ExportSelectedNative()
 		{
+#if UNITY_ANDROID
+			string path = CustomMusicScoreManagerService.ExportZip(_selected.Entry);
+			if (string.IsNullOrEmpty(path))
+			{
+				SetStatus("导出失败。");
+				ShowExportFailedDialog();
+				return;
+			}
+
+			SetStatus("请选择导出位置...");
+			using (AndroidJavaClass helper = new AndroidJavaClass("com.opensekai.ShareExportHelper"))
+			{
+				helper.CallStatic("SaveAndShare", path, gameObject.name, "OnSaveAndShareComplete");
+			}
+		}
+
+		private void OnSaveAndShareComplete(string result)
+		{
+			if (string.IsNullOrEmpty(_selected?.Entry?.Manifest?.scoreTitle))
+			{
+				return;
+			}
+
+			string title = _selected.Entry.Manifest.scoreTitle;
+			if (result.StartsWith("success"))
+			{
+				SetStatus("已导出并分享：" + title);
+			}
+			else if (result == "cancelled")
+			{
+				SetStatus("已导出到：" + title);
+			}
+			else
+			{
+				SetStatus("导出失败：" + result);
+			}
+		}
+#elif UNITY_IOS
 			if (NativeFilePicker.IsFilePickerBusy())
 			{
 				SetStatus("文件选择器已经打开。");
@@ -2030,6 +2068,7 @@ namespace Sekai.CustomMusicScoreManager
 					SetStatus("导出已取消或失败。");
 				}
 			});
+#endif
 		}
 
 		private void PickNativeFile(string title, string cancelStatus, Action<string> onPicked, params string[] extensions)
