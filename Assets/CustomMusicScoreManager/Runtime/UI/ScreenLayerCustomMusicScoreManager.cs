@@ -174,6 +174,7 @@ namespace Sekai.CustomMusicScoreManager
 		private bool _settingFastLateFlickEnabled;
 		private TextMeshProUGUI _settingFullscreenLabel;
 		private bool _settingFullscreenEnabled;
+		private string _lastExportPath;
 		private TMP_InputField _titleInput;
 		private TMP_InputField _scoreTitleInput;
 		private TMP_InputField _userInput;
@@ -1729,7 +1730,10 @@ namespace Sekai.CustomMusicScoreManager
 		private void OnShareConfirmed(string path)
 		{
 #if UNITY_ANDROID
-			ShareFileAndroid(path);
+			using (AndroidJavaClass helper = new AndroidJavaClass("com.opensekai.ShareExportHelper"))
+			{
+				helper.CallStatic("ShareFile", path);
+			}
 #elif UNITY_STANDALONE || UNITY_EDITOR
 			OpenInExplorer(path);
 #endif
@@ -1991,8 +1995,8 @@ namespace Sekai.CustomMusicScoreManager
 #if UNITY_ANDROID
 		private void ExportSelectedNative()
 		{
-			string path = CustomMusicScoreManagerService.ExportZip(_selected.Entry);
-			if (string.IsNullOrEmpty(path))
+			_lastExportPath = CustomMusicScoreManagerService.ExportZip(_selected.Entry);
+			if (string.IsNullOrEmpty(_lastExportPath))
 			{
 				SetStatus("导出失败。");
 				ShowExportFailedDialog();
@@ -2002,12 +2006,13 @@ namespace Sekai.CustomMusicScoreManager
 			SetStatus("请选择导出位置...");
 			using (AndroidJavaClass helper = new AndroidJavaClass("com.opensekai.ShareExportHelper"))
 			{
-				helper.CallStatic("SaveAndShare", path, gameObject.name, "OnSaveAndShareComplete");
+				helper.CallStatic("SaveAndShare", _lastExportPath, gameObject.name, "OnSaveAndShareComplete");
 			}
 		}
 
 		private void OnSaveAndShareComplete(string result)
 		{
+			string path = _lastExportPath;
 			if (string.IsNullOrEmpty(_selected?.Entry?.Manifest?.scoreTitle))
 			{
 				return;
@@ -2016,11 +2021,15 @@ namespace Sekai.CustomMusicScoreManager
 			string title = _selected.Entry.Manifest.scoreTitle;
 			if (result.StartsWith("success"))
 			{
-				SetStatus("已导出并分享：" + title);
+				SetStatus("已导出到：" + title);
+				if (!string.IsNullOrEmpty(path))
+				{
+					AskShareAfterExport(path);
+				}
 			}
 			else if (result == "cancelled")
 			{
-				SetStatus("已导出到：" + title);
+				SetStatus("已取消导出");
 			}
 			else
 			{
