@@ -464,7 +464,6 @@ namespace Sekai
 		RateChoiceGachaRegisterConfirmMultipleLineDialog = 459,
 		RateChoiceGachaRegisterConfirmSingleLineDialog = 460,
 		RateChoiceGachaUndecidedConfirmDialog = 461,
-		MusicScoreMakerErrorDialog = 462,
-		Common3ButtonDialog = 463
+		MusicScoreMakerErrorDialog = 462
 	}
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using Cysharp.Threading.Tasks;
+using Sekai;
 using Sekai.Live;
 using Sekai.MusicScoreMaker.Common;
 using Sekai.MusicScoreMaker.Ingame.Models;
@@ -453,8 +454,8 @@ namespace Sekai.CustomMusicScoreManager
 			CreateSettingLiveBackgroundModeSelector(settingsContent);
 			CreateSettingFastLateFlickSelector(settingsContent);
 			CreateSettingFullscreenSelector(settingsContent);
-			CreateBackupSelector(settingsContent);
-			CreateRestoreSelector(settingsContent);
+			CreateSettingBackupSelector(settingsContent);
+			CreateSettingRestoreSelector(settingsContent);
 
 			RectTransform buttonRow = CreateRect("ButtonRow", dialog);
 			LayoutElement buttonRowLayout = buttonRow.gameObject.AddComponent<LayoutElement>();
@@ -1033,7 +1034,7 @@ namespace Sekai.CustomMusicScoreManager
 			}
 		}
 
-		private void CreateBackupSelector(Transform parent)
+		private void CreateSettingBackupSelector(Transform parent)
 		{
 			RectTransform row = CreateRect("BackupSelector", parent);
 			LayoutElement rowLayout = row.gameObject.AddComponent<LayoutElement>();
@@ -1055,10 +1056,91 @@ namespace Sekai.CustomMusicScoreManager
 			titleLayout.preferredHeight = 58f;
 			titleLayout.minHeight = 58f;
 
-			CreateButton("Button", row, "点击开始", StartBackup, 220f, 54f);
+			Button button = CreateButton("Button", row, "点击开始", OnBackupButtonClick, 220f, 54f);
 		}
 
-		private void CreateRestoreSelector(Transform parent)
+		private void OnBackupButtonClick()
+		{
+			Debug.Log("[UI] OnBackupButtonClick called");
+			ScreenManager.Instance?.Show2ButtonDialog<Common2ButtonDialog>(
+				DialogType.Common2ButtonDialog,
+				() => OnBackupConfirmed(),
+				null,
+				DisplayLayerType.Layer_Dialog,
+				DialogSize.Manual,
+				true)?.SetMessageBodyText("是否进行应用程序备份？\n这将备份所有谱面数据和个性化设置");
+		}
+
+		private void OnBackupConfirmed()
+		{
+			Debug.Log("[UI] OnBackupConfirmed called, starting backup service");
+			BackupService.SetCallbacks(OnBackupProgress, OnBackupComplete);
+			BackupService.StartBackup(this.gameObject.name, "OnBackupComplete", "OnBackupProgress");
+		}
+
+		private void OnBackupProgress(string progress)
+		{
+			Debug.Log("[UI] OnBackupProgress called: " + progress);
+			if (_pleaseWaitDialog != null)
+			{
+				_pleaseWaitDialog.SetMessageBodyText(progress);
+			}
+			else
+			{
+				Debug.Log("[UI] Creating please wait dialog");
+				_pleaseWaitDialog = ScreenManager.Instance?.Show1ButtonDialog<Common1ButtonDialog>(
+					DialogType.Common1ButtonDialog,
+					null,
+					"WORD_DECIDE",
+					null,
+					DisplayLayerType.Layer_Dialog,
+					DialogSize.Manual,
+					false);
+				_pleaseWaitDialog?.SetMessageBodyText(progress);
+			}
+		}
+
+		private void OnBackupComplete(string result)
+		{
+			Debug.Log("[UI] OnBackupComplete called: " + result);
+			_pleaseWaitDialog?.Close();
+			_pleaseWaitDialog = null;
+			if (result.StartsWith("success:"))
+			{
+				string backupPath = result.Substring("success:".Length);
+				Debug.Log("[UI] Backup succeeded, showing share dialog for: " + backupPath);
+				ScreenManager.Instance?.Show2ButtonDialog<Common2ButtonDialog>(
+					DialogType.Common2ButtonDialog,
+					() => OnShareBackupConfirmed(backupPath),
+					null,
+					DisplayLayerType.Layer_Dialog,
+					DialogSize.Manual,
+					true)?.SetMessageBodyText("备份已保存到\n" + backupPath + "\n是否立即分享备份？");
+			}
+			else if (result == "cancelled")
+			{
+				SetStatus("已取消备份");
+			}
+			else
+			{
+				ScreenManager.Instance?.Show1ButtonDialog<Common1ButtonDialog>(
+					DialogType.Common1ButtonDialog,
+					null,
+					"WORD_DECIDE",
+					null,
+					DisplayLayerType.Layer_Dialog,
+					DialogSize.Manual,
+					true)?.SetMessageBodyText("备份失败：" + result);
+			}
+		}
+
+		private void OnShareBackupConfirmed(string backupPath)
+		{
+			Debug.Log("[UI] OnShareBackupConfirmed called, path: " + backupPath);
+			BackupService.ShareBackup(backupPath);
+		}
+
+		private void CreateSettingRestoreSelector(Transform parent)
 		{
 			RectTransform row = CreateRect("RestoreSelector", parent);
 			LayoutElement rowLayout = row.gameObject.AddComponent<LayoutElement>();
@@ -1080,7 +1162,103 @@ namespace Sekai.CustomMusicScoreManager
 			titleLayout.preferredHeight = 58f;
 			titleLayout.minHeight = 58f;
 
-			CreateButton("Button", row, "导入备份", StartRestore, 220f, 54f);
+			Button button = CreateButton("Button", row, "导入备份", OnRestoreButtonClick, 220f, 54f);
+		}
+
+		private void OnRestoreButtonClick()
+		{
+			string[] paths = StandaloneFileBrowser.OpenFilePanel("选择备份文件", "", "zip", false);
+			if (paths == null || paths.Length == 0 || string.IsNullOrEmpty(paths[0]))
+			{
+				return;
+			}
+
+			_restoreBackupPath = paths[0];
+			ScreenManager.Instance?.Show2ButtonDialog<Common2ButtonDialog>(
+				DialogType.Common2ButtonDialog,
+				() => OnRestoreScopeSelected(false),
+				() => OnRestoreScopeSelected(true),
+				DisplayLayerType.Layer_Dialog,
+				DialogSize.Manual,
+				true)?.SetMessageBodyText("请选择需要恢复的范围");
+		}
+
+		private string _restoreBackupPath;
+		private Common1ButtonDialog _pleaseWaitDialog;
+
+		private void OnRestoreScopeSelected(bool restoreAll)
+		{
+			if (restoreAll)
+			{
+				ScreenManager.Instance?.Show2ButtonDialog<Common2ButtonDialog>(
+					DialogType.Common2ButtonDialog,
+					() => StartRestore(true),
+					null,
+					DisplayLayerType.Layer_Dialog,
+					DialogSize.Manual,
+					true)?.SetMessageBodyText("真的要恢复所有备份吗？\n这将覆盖当前设置");
+			}
+			else
+			{
+				StartRestore(false);
+			}
+		}
+
+		private void StartRestore(bool restoreAll)
+		{
+			BackupService.StartRestore(_restoreBackupPath, restoreAll, this.gameObject.name, "OnRestoreComplete", "OnRestoreProgress");
+		}
+
+		private void OnRestoreProgress(string progress)
+		{
+			if (_pleaseWaitDialog != null)
+			{
+				_pleaseWaitDialog.SetMessageBodyText(progress);
+			}
+			else
+			{
+				_pleaseWaitDialog = ScreenManager.Instance?.Show1ButtonDialog<Common1ButtonDialog>(
+					DialogType.Common1ButtonDialog,
+					null,
+					"WORD_DECIDE",
+					null,
+					DisplayLayerType.Layer_Dialog,
+					DialogSize.Manual,
+					false);
+				_pleaseWaitDialog?.SetMessageBodyText(progress);
+			}
+		}
+
+		private void OnRestoreComplete(string result)
+		{
+			_pleaseWaitDialog?.Close();
+			_pleaseWaitDialog = null;
+			if (result == "success")
+			{
+				ScreenManager.Instance?.Show1ButtonDialog<Common1ButtonDialog>(
+					DialogType.Common1ButtonDialog,
+					null,
+					"WORD_DECIDE",
+					null,
+					DisplayLayerType.Layer_Dialog,
+					DialogSize.Manual,
+					true)?.SetMessageBodyText("恢复完成");
+			}
+			else if (result == "cancelled")
+			{
+				SetStatus("已取消恢复");
+			}
+			else
+			{
+				ScreenManager.Instance?.Show1ButtonDialog<Common1ButtonDialog>(
+					DialogType.Common1ButtonDialog,
+					null,
+					"WORD_DECIDE",
+					null,
+					DisplayLayerType.Layer_Dialog,
+					DialogSize.Manual,
+					true)?.SetMessageBodyText("恢复失败，请查看日志。");
+			}
 		}
 
 		private static bool ShouldShowDesktopFullscreenSetting()
@@ -1769,6 +1947,7 @@ namespace Sekai.CustomMusicScoreManager
 
 		private void AskShareAfterExport(string path)
 		{
+			Debug.Log("[UI] AskShareAfterExport called, path: " + path);
 			Common2ButtonDialog dialog = ScreenManager.Instance?.Show2ButtonDialog<Common2ButtonDialog>(
 				DialogType.Common2ButtonDialog,
 				() => OnShareConfirmed(path),
@@ -1781,31 +1960,64 @@ namespace Sekai.CustomMusicScoreManager
 
 		private void OnShareConfirmed(string path)
 		{
+			Debug.Log("[UI] OnShareConfirmed called, path: " + path);
+			Debug.Log("[UI] UNITY_ANDROID: " +
 #if UNITY_ANDROID
+				"true"
+#else
+				"false"
+#endif
+			);
+			Debug.Log("[UI] UNITY_STANDALONE: " +
+#if UNITY_STANDALONE
+				"true"
+#else
+				"false"
+#endif
+			);
+#if UNITY_ANDROID
+			Debug.Log("[UI] Calling Android ShareFile");
 			using (AndroidJavaClass helper = new AndroidJavaClass("com.opensekai.ShareExportHelper"))
 			{
 				helper.CallStatic("ShareFile", path);
 			}
 #elif UNITY_STANDALONE || UNITY_EDITOR
+			Debug.Log("[UI] Calling OpenInExplorer");
 			OpenInExplorer(path);
 #endif
 		}
 
 		private void OpenInExplorer(string path)
 		{
+			Debug.Log("[OpenInExplorer] START, path: " + path);
 #if UNITY_STANDALONE || UNITY_EDITOR
 			try
 			{
+				Debug.Log("[OpenInExplorer] Inside UNITY_STANDALONE block");
 				string directory = Path.GetDirectoryName(path);
+				Debug.Log("[OpenInExplorer] directory: " + directory);
+				Debug.Log("[OpenInExplorer] Directory.Exists: " + Directory.Exists(directory));
 				if (!string.IsNullOrEmpty(directory) && Directory.Exists(directory))
 				{
-					System.Diagnostics.Process.Start("explorer.exe", "/select,\"" + path + "\"");
+					// explorer.exe /select, requires backslashes
+					string normalizedPath = path.Replace("/", "\\");
+					Debug.Log("[OpenInExplorer] Launching explorer with: " + normalizedPath);
+					System.Diagnostics.Process.Start("explorer.exe", "/select,\"" + normalizedPath + "\"");
+					Debug.Log("[OpenInExplorer] Explorer launched successfully");
+				}
+				else
+				{
+					Debug.LogWarning("[OpenInExplorer] Directory does not exist or path is invalid");
 				}
 			}
-			catch (Exception)
+			catch (Exception ex)
 			{
+				Debug.LogError("[OpenInExplorer] Exception: " + ex.GetType().Name + ", " + ex.Message);
+				Debug.LogError("[OpenInExplorer] StackTrace: " + ex.StackTrace);
 				SetStatus("无法打开文件资源管理器。");
 			}
+#else
+			Debug.Log("[OpenInExplorer] Not on UNITY_STANDALONE || UNITY_EDITOR");
 #endif
 		}
 
@@ -1897,200 +2109,6 @@ namespace Sekai.CustomMusicScoreManager
 			{
 				SetStatus("导入已取消或失败。");
 			}
-		}
-
-		private void StartBackup()
-		{
-			Common2ButtonDialog dialog = ScreenManager.Instance?.Show2ButtonDialog<Common2ButtonDialog>(
-				DialogType.Common2ButtonDialog,
-				() => ConfirmBackup(),
-				null,
-				DisplayLayerType.Layer_Dialog,
-				DialogSize.Manual,
-				true);
-			dialog?.SetMessageBodyText("是否进行应用程序备份？\n这将备份所有谱面数据和个性化设置");
-		}
-
-		private void ConfirmBackup()
-		{
-			CloseSettings();
-			SetStatus("正在创建备份...");
-			ShowBackupProgressDialog();
-			ExecuteBackup();
-		}
-
-		private async void ExecuteBackup()
-		{
-			string zipPath = await BackupManager.StartBackupAsync();
-			if (!string.IsNullOrEmpty(zipPath))
-			{
-				SetStatus("备份已保存到：" + zipPath);
-				AskShareAfterBackup(zipPath);
-			}
-			else
-			{
-				SetStatus("备份失败。");
-				ShowBackupFailedDialog();
-			}
-		}
-
-		private void AskShareAfterBackup(string path)
-		{
-			Common2ButtonDialog dialog = ScreenManager.Instance?.Show2ButtonDialog<Common2ButtonDialog>(
-				DialogType.Common2ButtonDialog,
-				() => OnShareBackupConfirmed(path),
-				null,
-				DisplayLayerType.Layer_Dialog,
-				DialogSize.Manual,
-				true);
-			dialog?.SetMessageBodyText("备份已保存到 " + path + "\n是否立即分享备份？");
-		}
-
-		private void OnShareBackupConfirmed(string path)
-		{
-			BackupManager.ShareBackup(path);
-		}
-
-		private void ShowBackupFailedDialog()
-		{
-			ScreenManager.Instance?.Show1ButtonDialog<Common1ButtonDialog>(
-				DialogType.Common1ButtonDialog,
-				null,
-				"WORD_DECIDE",
-				null,
-				DisplayLayerType.Layer_Dialog,
-				DialogSize.Manual,
-				true)?.SetMessageBodyText("备份失败，请重试。");
-		}
-
-		private void ShowBackupProgressDialog()
-		{
-			Common1ButtonDialog progressDialog = ScreenManager.Instance?.Show1ButtonDialog<Common1ButtonDialog>(
-				DialogType.Common1ButtonDialog,
-				null,
-				"WORD_DECIDE",
-				null,
-				DisplayLayerType.Layer_Dialog,
-				DialogSize.Manual,
-				true);
-			progressDialog?.SetMessageBodyText("正在备份，请稍候...\n\n0/0");
-		}
-
-		private void StartRestore()
-		{
-#if UNITY_EDITOR || UNITY_STANDALONE
-			string path = PickStandaloneFile(
-				"导入备份文件",
-				string.Empty,
-				new ExtensionFilter("备份ZIP", "zip"));
-			if (!string.IsNullOrEmpty(path))
-			{
-				CloseSettings();
-				AskRestoreScope(path);
-			}
-#elif UNITY_ANDROID || UNITY_IOS
-			PickNativeFile(
-				"导入备份文件",
-				"导入已取消或失败。",
-				path =>
-				{
-					CloseSettings();
-					AskRestoreScope(path);
-				},
-				"zip");
-#else
-			SetStatus("当前平台暂不支持运行时导入。");
-#endif
-		}
-
-		private void AskRestoreScope(string zipPath)
-		{
-			Common3ButtonDialog dialog = ScreenManager.Instance?.ShowMultiButtonDialog<Common3ButtonDialog>(
-				DialogType.Common3ButtonDialog,
-				"选择需要恢复的范围",
-				new Dictionary<string, string>
-				{
-					{ "cancel", "取消" },
-					{ "scores", "仅恢复谱面" },
-					{ "all", "恢复所有" }
-				},
-				new Dictionary<string, Action>
-				{
-					{ "cancel", () => { } },
-					{ "scores", () => ExecuteRestore(zipPath, BackupManager.RestoreScope.ScoresOnly) },
-					{ "all", () => AskRestoreAllConfirm(zipPath) }
-				},
-				DisplayLayerType.Layer_Dialog,
-				DialogSize.Manual,
-				true);
-		}
-
-		private void AskRestoreAllConfirm(string zipPath)
-		{
-			Common2ButtonDialog dialog = ScreenManager.Instance?.Show2ButtonDialog<Common2ButtonDialog>(
-				DialogType.Common2ButtonDialog,
-				() => ExecuteRestore(zipPath, BackupManager.RestoreScope.All),
-				null,
-				DisplayLayerType.Layer_Dialog,
-				DialogSize.Manual,
-				true);
-			dialog?.SetMessageBodyText("真的要恢复所有备份吗？\n这将覆盖当前设置");
-		}
-
-		private async void ExecuteRestore(string zipPath, BackupManager.RestoreScope scope)
-		{
-			SetStatus("正在恢复备份...");
-			ShowRestoreProgressDialog();
-
-			bool success = await BackupManager.StartRestoreAsync(zipPath, scope);
-			if (success)
-			{
-				SetStatus("恢复完成。");
-				ShowRestoreSuccessDialog();
-				RefreshList();
-			}
-			else
-			{
-				SetStatus("恢复失败。");
-				ShowRestoreFailedDialog();
-			}
-		}
-
-		private void ShowRestoreProgressDialog()
-		{
-			Common1ButtonDialog progressDialog = ScreenManager.Instance?.Show1ButtonDialog<Common1ButtonDialog>(
-				DialogType.Common1ButtonDialog,
-				null,
-				"WORD_DECIDE",
-				null,
-				DisplayLayerType.Layer_Dialog,
-				DialogSize.Manual,
-				true);
-			progressDialog?.SetMessageBodyText("正在恢复，请稍候...");
-		}
-
-		private void ShowRestoreSuccessDialog()
-		{
-			ScreenManager.Instance?.Show1ButtonDialog<Common1ButtonDialog>(
-				DialogType.Common1ButtonDialog,
-				null,
-				"WORD_DECIDE",
-				null,
-				DisplayLayerType.Layer_Dialog,
-				DialogSize.Manual,
-				true)?.SetMessageBodyText("恢复完成。");
-		}
-
-		private void ShowRestoreFailedDialog()
-		{
-			ScreenManager.Instance?.Show1ButtonDialog<Common1ButtonDialog>(
-				DialogType.Common1ButtonDialog,
-				null,
-				"WORD_DECIDE",
-				null,
-				DisplayLayerType.Layer_Dialog,
-				DialogSize.Manual,
-				true)?.SetMessageBodyText("恢复失败，请查看日志。");
 		}
 
 		private void ReplaceSelectedAudio()
@@ -2324,11 +2342,6 @@ namespace Sekai.CustomMusicScoreManager
 					SetStatus("导出已取消或失败。");
 				}
 			});
-		}
-#else
-		private void ExportSelectedNative()
-		{
-			ExportSelectedDesktop();
 		}
 #endif
 
