@@ -1,10 +1,27 @@
-# Ojsk Community
+### Ojsk Community
 
-Ojsk Community 是一个用于学习和研究目的的 Project Sekai 音乐游戏玩法复刻项目，目前提供可用的**谱面编辑器**、**第三方歌曲包支持**，以及**从编辑器进入 live 测试游玩的完整流程。
+ <img src="https://www.jsoftstudio.top/css/Jsoft_logo.png" width = "100" height = "100" alt="Jsoft_logo" align=center />
+
+###### ©2024-2026 Jsoft Studio
+
+------
+
+<img src="https://img.shields.io/github/stars/kamcdev/OpenSekai_Community.svg">
+
+<img src="https://img.shields.io/badge/交流QQ群-984242265-purple">
+
+<img src="https://img.shields.io/badge/B站-J软件官方-light">
+
+<img src="https://img.shields.io/badge/官网-www.jsoftstudio.top-yellow">
+
+------
+
+
+Ojsk Community 是一个用于学习和研究目的的 Project Sekai 音乐游戏玩法复刻项目，目前提供可用的**谱面编辑器**、**第三方歌曲包支持**，以及**从编辑器进入 live 测试游玩**的完整流程。
 
 ## 开发环境
 
-- Unity: 2022.3.62f2
+- Unity: 2022.3.62f3
 - 渲染管线: URP 14
 - 主要依赖: TextMesh Pro、UniTask、MessagePack、uPalette、UI Particle、SoftMaskForUGUI
 
