@@ -59,6 +59,9 @@ ExportedObj/
 *.mdb
 *.opendb
 *.VC.db
+build/
+build_android/
+build_web/
 
 # Unity3D generated meta files
 *.pidb.meta
