@@ -1174,35 +1174,37 @@ namespace Sekai.CustomMusicScoreManager
 			}
 
 			_restoreBackupPath = paths[0];
+			// Use localization keys for button labels: "RESTORE_SCORES" and "RESTORE_ALL"
+			// Use message key "MSG_RESTORE_SCOPE" for dialog body text
 			ScreenManager.Instance?.Show2ButtonDialog<Common2ButtonDialog>(
 				DialogType.Common2ButtonDialog,
-				() => OnRestoreScopeSelected(false),
-				() => OnRestoreScopeSelected(true),
+				"MSG_RESTORE_SCOPE",
+				"RESTORE_SCORES",
+				"RESTORE_ALL",
+				() => StartRestore(false),
+				() => OnRestoreAllSelected(),
 				DisplayLayerType.Layer_Dialog,
 				DialogSize.Manual,
-				true)?.SetMessageBodyText("请选择需要恢复的范围");
+				true);
+		}
+
+		private void OnRestoreAllSelected()
+		{
+			// Use message key "MSG_RESTORE_ALL_CONFIRM" for dialog body text
+			ScreenManager.Instance?.Show2ButtonDialog<Common2ButtonDialog>(
+				DialogType.Common2ButtonDialog,
+				"MSG_RESTORE_ALL_CONFIRM",
+				"WORD_DECIDE",
+				"WORD_CANCEL",
+				() => StartRestore(true),
+				null,
+				DisplayLayerType.Layer_Dialog,
+				DialogSize.Manual,
+				true);
 		}
 
 		private string _restoreBackupPath;
 		private Common1ButtonDialog _pleaseWaitDialog;
-
-		private void OnRestoreScopeSelected(bool restoreAll)
-		{
-			if (restoreAll)
-			{
-				ScreenManager.Instance?.Show2ButtonDialog<Common2ButtonDialog>(
-					DialogType.Common2ButtonDialog,
-					() => StartRestore(true),
-					null,
-					DisplayLayerType.Layer_Dialog,
-					DialogSize.Manual,
-					true)?.SetMessageBodyText("真的要恢复所有备份吗？\n这将覆盖当前设置");
-			}
-			else
-			{
-				StartRestore(false);
-			}
-		}
 
 		private void StartRestore(bool restoreAll)
 		{

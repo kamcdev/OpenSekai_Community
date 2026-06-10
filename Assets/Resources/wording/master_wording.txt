@@ -979,6 +979,8 @@ MSG_REQUIRE_MEMBER_LV,メンバーLv.{0}以上が必要です。
 MSG_REREFLECT_PRODUCT_HOME,クリスタルショップにて受け取り可能な商品があります。
 MSG_RESET_AT_HOUR,{0}時にリセット
 MSG_RESTRICT_MULTILIVE,他のお客様に迷惑がかかる行為が検出されたため、\n複数プレイヤーによるライブ機能を一時制限させて頂きます。
+MSG_RESTORE_SCOPE,Please select the restore scope.
+MSG_RESTORE_ALL_CONFIRM,Are you sure you want to restore all backup?\nThis will overwrite current settings.
 MSG_REST_UNLOCK_STORY,第{0}話 解放まで あと
 MSG_REST_UNLOCK_STORY_BOTTOM,あと
 MSG_REST_UNLOCK_STORY_TOP,第{0}話 解放まで
@@ -2899,6 +2901,8 @@ WORD_QUANTIZE_FORMAT,{0}分音符
 WORD_QUANTIZE_RESULT_FORMAT,{0}分
 WORD_RANGE,範囲
 WORD_RANGE_SELECT,範囲選択
+RESTORE_SCORES,Restore scores only
+RESTORE_ALL,Restore all
 WORD_RANK,ランク
 WORD_RANKING,ランキング
 WORD_RANKMATCH,ランクマッチ
