@@ -578,7 +578,8 @@ namespace Sekai.Live
 		{
 			if (autoLabel != null)
 			{
-				autoLabel.SetActive(isAuto);
+				bool useFakePerfect = LiveSettingData.LoadFromStorage()?.UsesAutoFakePerfectMode ?? false;
+				autoLabel.SetActive(isAuto && !useFakePerfect);
 			}
 		}
 

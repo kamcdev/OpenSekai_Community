@@ -13,9 +13,39 @@ namespace Sekai.Core.Live
 
 		public int BaseNoteScore { get; set; }
 
-		public bool IsPerfectCombo => score.badCount == 0 && score.missCount == 0 && score.goodCount == 0;
+		public bool IsPerfectCombo
+		{
+			get
+			{
+				if (score.badCount != 0 || score.missCount != 0 || score.goodCount != 0)
+				{
+					return false;
+				}
+				// If all notes are Auto, it's not a perfect combo
+				if (score.autoCount == score.totalComboCount)
+				{
+					return false;
+				}
+				return true;
+			}
+		}
 
-		public bool IsAllPerfectCombo => score.IsAllPerfect;
+		public bool IsAllPerfectCombo
+		{
+			get
+			{
+				if (score.badCount != 0 || score.missCount != 0 || score.goodCount != 0 || score.greatCount != 0)
+				{
+					return false;
+				}
+				// If all notes are Auto, it's not an all perfect combo
+				if (score.autoCount == score.totalComboCount)
+				{
+					return false;
+				}
+				return score.IsAllPerfect;
+			}
+		}
 
 		public ScoreLogic(LiveBundleBuildData data)
 		{
@@ -50,7 +80,14 @@ namespace Sekai.Core.Live
 				return;
 			}
 
-			score.combo = note.Result < NoteResult.Great ? 0 : score.combo + 1;
+			NoteResult effectiveResult = note.Result;
+			// In Fake Perfect mode, treat Auto as Perfect for combo counting
+			if (effectiveResult == NoteResult.Auto && LiveSettingData.LoadFromStorage()?.UsesAutoFakePerfectMode == true)
+			{
+				effectiveResult = NoteResult.Perfect;
+			}
+
+			score.combo = effectiveResult < NoteResult.Great ? 0 : score.combo + 1;
 			if (score.combo > score.maxCombo)
 			{
 				score.maxCombo = score.combo;

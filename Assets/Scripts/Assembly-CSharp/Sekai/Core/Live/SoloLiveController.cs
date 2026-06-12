@@ -418,6 +418,11 @@ namespace Sekai.Core.Live
 			}
 
 			LiveScore score = liveLogic?.Score ?? default;
+			// If all notes were Auto, show Clear animation (not FullCombo or AllPerfect)
+			if (score.totalComboCount > 0 && score.autoCount == score.totalComboCount)
+			{
+				return LiveResultAnimationType.Clear;
+			}
 			if (score.totalComboCount == score.perfectCount)
 			{
 				return LiveResultAnimationType.AllPerfect;

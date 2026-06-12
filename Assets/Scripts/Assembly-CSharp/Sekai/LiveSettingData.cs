@@ -26,6 +26,10 @@ namespace Sekai
 
 		public const int MusicInfoDisplayModeSkip = 2;
 
+		public const int AutoFakePerfectModeAuto = 0;
+
+		public const int AutoFakePerfectModeFakePerfect = 1;
+
 		public const int CustomMusicScoreBackgroundModeJacket = 0;
 
 		public const int CustomMusicScoreBackgroundMode2DMV = 1;
@@ -156,6 +160,9 @@ namespace Sekai
 		[Key("CustomMusicScoreLiveBackgroundMode")]
 		public int? CustomMusicScoreLiveBackgroundMode { get; set; }
 
+		[Key("CustomMusicScoreAutoFakePerfectMode")]
+		public int? CustomMusicScoreAutoFakePerfectMode { get; set; }
+
 		[IgnoreMember]
 		[JsonIgnore]
 		public bool UsesCustomMusicScoreMusicInfoDisplay
@@ -183,6 +190,16 @@ namespace Sekai
 			get
 			{
 				return (CustomMusicScoreLiveBackgroundMode ?? CustomMusicScoreBackgroundMode2DMV) == CustomMusicScoreBackgroundMode2DMV;
+			}
+		}
+
+		[IgnoreMember]
+		[JsonIgnore]
+		public bool UsesAutoFakePerfectMode
+		{
+			get
+			{
+				return (CustomMusicScoreAutoFakePerfectMode ?? AutoFakePerfectModeAuto) == AutoFakePerfectModeFakePerfect;
 			}
 		}
 

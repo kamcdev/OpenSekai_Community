@@ -169,6 +169,8 @@ namespace Sekai.CustomMusicScoreManager
 		private bool _settingSimultaneousLineEnabled;
 		private TextMeshProUGUI _settingMusicInfoDisplayModeLabel;
 		private int _settingMusicInfoDisplayMode;
+		private TextMeshProUGUI _settingAutoFakePerfectModeLabel;
+		private int _settingAutoFakePerfectMode;
 		private TextMeshProUGUI _settingLiveBackgroundModeLabel;
 		private int _settingLiveBackgroundMode;
 		private TextMeshProUGUI _settingFastLateFlickLabel;
@@ -450,6 +452,7 @@ namespace Sekai.CustomMusicScoreManager
 			CreateSettingNoteEffectSelector(settingsContent);
 			CreateSettingSimultaneousLineSelector(settingsContent);
 			CreateSettingMusicInfoDisplayModeSelector(settingsContent);
+			CreateSettingAutoFakePerfectModeSelector(settingsContent);
 			CreateSettingScoreMakerPreviewModeSelector(settingsContent);
 			CreateSettingLiveBackgroundModeSelector(settingsContent);
 			CreateSettingFastLateFlickSelector(settingsContent);
@@ -494,6 +497,7 @@ namespace Sekai.CustomMusicScoreManager
 			SetSettingNoteEffectIndex(liveSettingData.NoteEffect);
 			SetSettingSimultaneousLine(liveSettingData.UseSimultaneousPushingLine);
 			SetSettingMusicInfoDisplayMode(liveSettingData.CustomMusicScoreMusicInfoDisplayMode ?? LiveSettingData.MusicInfoDisplayModeCustomScore);
+			SetSettingAutoFakePerfectMode(liveSettingData.CustomMusicScoreAutoFakePerfectMode ?? LiveSettingData.AutoFakePerfectModeAuto);
 			SetSettingLiveBackgroundMode(liveSettingData.CustomMusicScoreLiveBackgroundMode ?? LiveSettingData.CustomMusicScoreBackgroundMode2DMV);
 			SetSettingFastLateFlick(liveSettingData.IsFastLateFlick);
 			SetSettingFullscreen(localSettings.FullscreenEnabled ?? Screen.fullScreen);
@@ -550,6 +554,7 @@ namespace Sekai.CustomMusicScoreManager
 			liveSettingData.NoteEffect = _settingNoteEffectIndex;
 			liveSettingData.UseSimultaneousPushingLine = _settingSimultaneousLineEnabled;
 			liveSettingData.CustomMusicScoreMusicInfoDisplayMode = _settingMusicInfoDisplayMode;
+			liveSettingData.CustomMusicScoreAutoFakePerfectMode = _settingAutoFakePerfectMode;
 			liveSettingData.CustomMusicScoreLiveBackgroundMode = _settingLiveBackgroundMode;
 			liveSettingData.IsFastLateFlick = _settingFastLateFlickEnabled;
 			if (ShouldShowDesktopFullscreenSetting())
@@ -586,6 +591,7 @@ namespace Sekai.CustomMusicScoreManager
 			SetSettingNoteEffectIndex(liveSettingData.NoteEffect);
 			SetSettingSimultaneousLine(liveSettingData.UseSimultaneousPushingLine);
 			SetSettingMusicInfoDisplayMode(liveSettingData.CustomMusicScoreMusicInfoDisplayMode ?? LiveSettingData.MusicInfoDisplayModeCustomScore);
+			SetSettingAutoFakePerfectMode(liveSettingData.CustomMusicScoreAutoFakePerfectMode ?? LiveSettingData.AutoFakePerfectModeAuto);
 			SetSettingLiveBackgroundMode(liveSettingData.CustomMusicScoreLiveBackgroundMode ?? LiveSettingData.CustomMusicScoreBackgroundMode2DMV);
 			SetSettingFastLateFlick(liveSettingData.IsFastLateFlick);
 			SetSettingFullscreen(localSettings.FullscreenEnabled ?? Screen.fullScreen);
@@ -921,6 +927,52 @@ namespace Sekai.CustomMusicScoreManager
 						break;
 				}
 				_settingMusicInfoDisplayModeLabel.text = labelText;
+			}
+		}
+
+		private void CreateSettingAutoFakePerfectModeSelector(Transform parent)
+		{
+			RectTransform row = CreateRect("AutoFakePerfectModeSelector", parent);
+			LayoutElement rowLayout = row.gameObject.AddComponent<LayoutElement>();
+			rowLayout.preferredHeight = 58f;
+			rowLayout.minHeight = 58f;
+
+			HorizontalLayoutGroup rowGroup = row.gameObject.AddComponent<HorizontalLayoutGroup>();
+			rowGroup.spacing = 16f;
+			rowGroup.childAlignment = TextAnchor.MiddleLeft;
+			rowGroup.childControlWidth = true;
+			rowGroup.childControlHeight = true;
+			rowGroup.childForceExpandWidth = false;
+			rowGroup.childForceExpandHeight = false;
+
+			TextMeshProUGUI title = CreateText("Label", row, "Auto模式", 24, FontStyles.Bold, TextAlignmentOptions.Left);
+			LayoutElement titleLayout = title.gameObject.AddComponent<LayoutElement>();
+			titleLayout.preferredWidth = 180f;
+			titleLayout.minWidth = 180f;
+			titleLayout.preferredHeight = 58f;
+			titleLayout.minHeight = 58f;
+
+			Button button = CreateButton("Button", row, string.Empty, CycleSettingAutoFakePerfectMode, 220f, 54f);
+			_settingAutoFakePerfectModeLabel = button.GetComponentInChildren<TextMeshProUGUI>();
+			SetSettingAutoFakePerfectMode(LiveSettingData.AutoFakePerfectModeAuto);
+		}
+
+		private void CycleSettingAutoFakePerfectMode()
+		{
+			int nextMode = _settingAutoFakePerfectMode == LiveSettingData.AutoFakePerfectModeAuto
+				? LiveSettingData.AutoFakePerfectModeFakePerfect
+				: LiveSettingData.AutoFakePerfectModeAuto;
+			SetSettingAutoFakePerfectMode(nextMode);
+		}
+
+		private void SetSettingAutoFakePerfectMode(int mode)
+		{
+			_settingAutoFakePerfectMode = mode;
+			if (_settingAutoFakePerfectModeLabel != null)
+			{
+				_settingAutoFakePerfectModeLabel.text = _settingAutoFakePerfectMode == LiveSettingData.AutoFakePerfectModeFakePerfect
+					? "伪Perfect"
+					: "Auto模式";
 			}
 		}
 
