@@ -30,6 +30,16 @@ namespace Sekai
 
 		public const int AutoFakePerfectModeFakePerfect = 1;
 
+		public const int AutoResultAnimationNone = 0;
+
+		public const int AutoResultAnimationAllPerfect = 1;
+
+		public const int AutoResultAnimationFullCombo = 2;
+
+		public const int AutoResultAnimationClear = 3;
+
+		public const int AutoResultAnimationFinish = 4;
+
 		public const int CustomMusicScoreBackgroundModeJacket = 0;
 
 		public const int CustomMusicScoreBackgroundMode2DMV = 1;
@@ -163,6 +173,9 @@ namespace Sekai
 		[Key("CustomMusicScoreAutoFakePerfectMode")]
 		public int? CustomMusicScoreAutoFakePerfectMode { get; set; }
 
+		[Key("CustomMusicScoreAutoResultAnimation")]
+		public int? CustomMusicScoreAutoResultAnimation { get; set; }
+
 		[IgnoreMember]
 		[JsonIgnore]
 		public bool UsesCustomMusicScoreMusicInfoDisplay
@@ -200,6 +213,16 @@ namespace Sekai
 			get
 			{
 				return (CustomMusicScoreAutoFakePerfectMode ?? AutoFakePerfectModeAuto) == AutoFakePerfectModeFakePerfect;
+			}
+		}
+
+		[IgnoreMember]
+		[JsonIgnore]
+		public int AutoResultAnimationMode
+		{
+			get
+			{
+				return CustomMusicScoreAutoResultAnimation ?? AutoResultAnimationNone;
 			}
 		}
 

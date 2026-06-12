@@ -171,6 +171,8 @@ namespace Sekai.CustomMusicScoreManager
 		private int _settingMusicInfoDisplayMode;
 		private TextMeshProUGUI _settingAutoFakePerfectModeLabel;
 		private int _settingAutoFakePerfectMode;
+		private TextMeshProUGUI _settingAutoResultAnimationLabel;
+		private int _settingAutoResultAnimation;
 		private TextMeshProUGUI _settingLiveBackgroundModeLabel;
 		private int _settingLiveBackgroundMode;
 		private TextMeshProUGUI _settingFastLateFlickLabel;
@@ -453,6 +455,7 @@ namespace Sekai.CustomMusicScoreManager
 			CreateSettingSimultaneousLineSelector(settingsContent);
 			CreateSettingMusicInfoDisplayModeSelector(settingsContent);
 			CreateSettingAutoFakePerfectModeSelector(settingsContent);
+			CreateSettingAutoResultAnimationSelector(settingsContent);
 			CreateSettingScoreMakerPreviewModeSelector(settingsContent);
 			CreateSettingLiveBackgroundModeSelector(settingsContent);
 			CreateSettingFastLateFlickSelector(settingsContent);
@@ -498,6 +501,7 @@ namespace Sekai.CustomMusicScoreManager
 			SetSettingSimultaneousLine(liveSettingData.UseSimultaneousPushingLine);
 			SetSettingMusicInfoDisplayMode(liveSettingData.CustomMusicScoreMusicInfoDisplayMode ?? LiveSettingData.MusicInfoDisplayModeCustomScore);
 			SetSettingAutoFakePerfectMode(liveSettingData.CustomMusicScoreAutoFakePerfectMode ?? LiveSettingData.AutoFakePerfectModeAuto);
+			SetSettingAutoResultAnimation(liveSettingData.AutoResultAnimationMode);
 			SetSettingLiveBackgroundMode(liveSettingData.CustomMusicScoreLiveBackgroundMode ?? LiveSettingData.CustomMusicScoreBackgroundMode2DMV);
 			SetSettingFastLateFlick(liveSettingData.IsFastLateFlick);
 			SetSettingFullscreen(localSettings.FullscreenEnabled ?? Screen.fullScreen);
@@ -555,6 +559,7 @@ namespace Sekai.CustomMusicScoreManager
 			liveSettingData.UseSimultaneousPushingLine = _settingSimultaneousLineEnabled;
 			liveSettingData.CustomMusicScoreMusicInfoDisplayMode = _settingMusicInfoDisplayMode;
 			liveSettingData.CustomMusicScoreAutoFakePerfectMode = _settingAutoFakePerfectMode;
+			liveSettingData.CustomMusicScoreAutoResultAnimation = _settingAutoResultAnimation;
 			liveSettingData.CustomMusicScoreLiveBackgroundMode = _settingLiveBackgroundMode;
 			liveSettingData.IsFastLateFlick = _settingFastLateFlickEnabled;
 			if (ShouldShowDesktopFullscreenSetting())
@@ -592,6 +597,7 @@ namespace Sekai.CustomMusicScoreManager
 			SetSettingSimultaneousLine(liveSettingData.UseSimultaneousPushingLine);
 			SetSettingMusicInfoDisplayMode(liveSettingData.CustomMusicScoreMusicInfoDisplayMode ?? LiveSettingData.MusicInfoDisplayModeCustomScore);
 			SetSettingAutoFakePerfectMode(liveSettingData.CustomMusicScoreAutoFakePerfectMode ?? LiveSettingData.AutoFakePerfectModeAuto);
+			SetSettingAutoResultAnimation(liveSettingData.AutoResultAnimationMode);
 			SetSettingLiveBackgroundMode(liveSettingData.CustomMusicScoreLiveBackgroundMode ?? LiveSettingData.CustomMusicScoreBackgroundMode2DMV);
 			SetSettingFastLateFlick(liveSettingData.IsFastLateFlick);
 			SetSettingFullscreen(localSettings.FullscreenEnabled ?? Screen.fullScreen);
@@ -973,6 +979,56 @@ namespace Sekai.CustomMusicScoreManager
 				_settingAutoFakePerfectModeLabel.text = _settingAutoFakePerfectMode == LiveSettingData.AutoFakePerfectModeFakePerfect
 					? "伪Perfect"
 					: "Auto模式";
+			}
+		}
+
+		private void CreateSettingAutoResultAnimationSelector(Transform parent)
+		{
+			RectTransform row = CreateRect("AutoResultAnimationSelector", parent);
+			LayoutElement rowLayout = row.gameObject.AddComponent<LayoutElement>();
+			rowLayout.preferredHeight = 58f;
+			rowLayout.minHeight = 58f;
+
+			HorizontalLayoutGroup rowGroup = row.gameObject.AddComponent<HorizontalLayoutGroup>();
+			rowGroup.spacing = 16f;
+			rowGroup.childAlignment = TextAnchor.MiddleLeft;
+			rowGroup.childControlWidth = true;
+			rowGroup.childControlHeight = true;
+			rowGroup.childForceExpandWidth = false;
+			rowGroup.childForceExpandHeight = false;
+
+			TextMeshProUGUI title = CreateText("Label", row, "Auto结算动画", 24, FontStyles.Bold, TextAlignmentOptions.Left);
+			LayoutElement titleLayout = title.gameObject.AddComponent<LayoutElement>();
+			titleLayout.preferredWidth = 180f;
+			titleLayout.minWidth = 180f;
+			titleLayout.preferredHeight = 58f;
+			titleLayout.minHeight = 58f;
+
+			Button button = CreateButton("Button", row, string.Empty, CycleSettingAutoResultAnimation, 220f, 54f);
+			_settingAutoResultAnimationLabel = button.GetComponentInChildren<TextMeshProUGUI>();
+			SetSettingAutoResultAnimation(LiveSettingData.AutoResultAnimationClear);
+		}
+
+		private void CycleSettingAutoResultAnimation()
+		{
+			int nextMode = (_settingAutoResultAnimation + 1) % 5;
+			SetSettingAutoResultAnimation(nextMode);
+		}
+
+		private void SetSettingAutoResultAnimation(int mode)
+		{
+			_settingAutoResultAnimation = mode;
+			if (_settingAutoResultAnimationLabel != null)
+			{
+				_settingAutoResultAnimationLabel.text = mode switch
+				{
+					LiveSettingData.AutoResultAnimationNone => "不结算",
+					LiveSettingData.AutoResultAnimationAllPerfect => "AP动画",
+					LiveSettingData.AutoResultAnimationFullCombo => "FC动画",
+					LiveSettingData.AutoResultAnimationClear => "Clear动画",
+					LiveSettingData.AutoResultAnimationFinish => "Finish动画",
+					_ => "不结算"
+				};
 			}
 		}
 

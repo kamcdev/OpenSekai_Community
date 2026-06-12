@@ -418,11 +418,33 @@ namespace Sekai.Core.Live
 			}
 
 			LiveScore score = liveLogic?.Score ?? default;
-			// If all notes were Auto, show Clear animation (not FullCombo or AllPerfect)
+			// Check if this is an Auto play
+			bool isAutoPlay = BootData?.IsAuto == true;
+			int autoResultAnimation = LiveSettingData.LoadFromStorage()?.AutoResultAnimationMode ?? LiveSettingData.AutoResultAnimationNone;
+
+			// If all notes were Auto, handle based on settings
 			if (score.totalComboCount > 0 && score.autoCount == score.totalComboCount)
 			{
+				if (isAutoPlay)
+				{
+					// Auto play with all Auto notes - use custom result animation setting
+					switch (autoResultAnimation)
+					{
+						case LiveSettingData.AutoResultAnimationNone:
+							return LiveResultAnimationType.None;
+						case LiveSettingData.AutoResultAnimationAllPerfect:
+							return LiveResultAnimationType.AllPerfect;
+						case LiveSettingData.AutoResultAnimationFullCombo:
+							return LiveResultAnimationType.FullCombo;
+						case LiveSettingData.AutoResultAnimationClear:
+							return LiveResultAnimationType.Clear;
+						case LiveSettingData.AutoResultAnimationFinish:
+							return LiveResultAnimationType.LifeZero;
+					}
+				}
 				return LiveResultAnimationType.Clear;
 			}
+
 			if (score.totalComboCount == score.perfectCount)
 			{
 				return LiveResultAnimationType.AllPerfect;
