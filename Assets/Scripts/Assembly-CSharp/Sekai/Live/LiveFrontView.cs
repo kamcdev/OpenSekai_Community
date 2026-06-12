@@ -160,6 +160,21 @@ namespace Sekai.Live
 
 		public override void MusicStart(float musicTime)
 		{
+			bool skipMusicInfo = baseController?.BootData?.IsCustomMusicScore == true &&
+				baseController?.BootData?.LiveSettingData?.SkipsCustomMusicScoreMusicInfo == true;
+
+			if (skipMusicInfo)
+			{
+				// Skip mode: immediately disable MusicInfoView and set brightness
+				MusicInfoView musicInfoView = ResolveMusicInfo();
+				if (musicInfoView != null)
+				{
+					musicInfoView.gameObject.SetActive(false);
+				}
+				SetBackgroundBrightness(GetTargetBackgroundBrightness());
+				return;
+			}
+
 			if (baseController?.BootData?.MusicData?.PlayStartEffectEnabled == true)
 			{
 				UpdateSpriteAlpha(0f);

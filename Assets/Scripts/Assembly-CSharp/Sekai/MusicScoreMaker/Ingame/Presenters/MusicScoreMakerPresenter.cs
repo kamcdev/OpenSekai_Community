@@ -7058,7 +7058,8 @@ namespace Sekai.MusicScoreMaker.Ingame.Presenters
 				bootData.MusicData.CustomPlayLevel = difficulty?.playLevel ?? _model?.CustomMusicScoreEntry?.Manifest.playLevel ?? 0;
 				bootData.MusicData.MusicScore = musicScore;
 				bootData.MusicData.StartMusicTimeMs = MusicScoreMakerSettingsManager.CalcStartMusicTimeMs(bootData, Mathf.FloorToInt(_model?.FillerSec ?? 0f));
-				bootData.MusicData.PlayStartEffectEnabled = false;
+				// Set PlayStartEffectEnabled to false for test play mode or when skip mode is enabled
+				bootData.MusicData.PlayStartEffectEnabled = !(bootData.LiveSettingData?.SkipsCustomMusicScoreMusicInfo ?? false);
 			}
 
 			CustomMusicScoreEntry entry = _model?.CustomMusicScoreEntry;

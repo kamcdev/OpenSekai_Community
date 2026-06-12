@@ -884,22 +884,43 @@ namespace Sekai.CustomMusicScoreManager
 
 		private void CycleSettingMusicInfoDisplayMode()
 		{
-			int nextMode = _settingMusicInfoDisplayMode == LiveSettingData.MusicInfoDisplayModeCustomScore
-				? LiveSettingData.MusicInfoDisplayModeNormal
-				: LiveSettingData.MusicInfoDisplayModeCustomScore;
+			int nextMode;
+			switch (_settingMusicInfoDisplayMode)
+			{
+				case LiveSettingData.MusicInfoDisplayModeNormal:
+					nextMode = LiveSettingData.MusicInfoDisplayModeCustomScore;
+					break;
+				case LiveSettingData.MusicInfoDisplayModeCustomScore:
+					nextMode = LiveSettingData.MusicInfoDisplayModeSkip;
+					break;
+				case LiveSettingData.MusicInfoDisplayModeSkip:
+				default:
+					nextMode = LiveSettingData.MusicInfoDisplayModeNormal;
+					break;
+			}
 			SetSettingMusicInfoDisplayMode(nextMode);
 		}
 
 		private void SetSettingMusicInfoDisplayMode(int mode)
 		{
-			_settingMusicInfoDisplayMode = mode == LiveSettingData.MusicInfoDisplayModeNormal
-				? LiveSettingData.MusicInfoDisplayModeNormal
-				: LiveSettingData.MusicInfoDisplayModeCustomScore;
+			_settingMusicInfoDisplayMode = mode;
 			if (_settingMusicInfoDisplayModeLabel != null)
 			{
-				_settingMusicInfoDisplayModeLabel.text = _settingMusicInfoDisplayMode == LiveSettingData.MusicInfoDisplayModeCustomScore
-					? "自制谱模式"
-					: "正常模式";
+				string labelText;
+				switch (_settingMusicInfoDisplayMode)
+				{
+					case LiveSettingData.MusicInfoDisplayModeCustomScore:
+						labelText = "自制谱模式";
+						break;
+					case LiveSettingData.MusicInfoDisplayModeSkip:
+						labelText = "跳过";
+						break;
+					case LiveSettingData.MusicInfoDisplayModeNormal:
+					default:
+						labelText = "正常模式";
+						break;
+				}
+				_settingMusicInfoDisplayModeLabel.text = labelText;
 			}
 		}
 
@@ -1871,7 +1892,8 @@ namespace Sekai.CustomMusicScoreManager
 				bootData.MusicData.CustomPlayLevel = entry.Manifest.playLevel;
 				bootData.MusicData.MusicScore = musicScore;
 				bootData.MusicData.StartMusicTimeMs = 0L;
-				bootData.MusicData.PlayStartEffectEnabled = true;
+				// Skip MusicInfo display if skip mode is enabled
+				bootData.MusicData.PlayStartEffectEnabled = !(liveSettingData?.SkipsCustomMusicScoreMusicInfo ?? false);
 			}
 
 			return bootData;

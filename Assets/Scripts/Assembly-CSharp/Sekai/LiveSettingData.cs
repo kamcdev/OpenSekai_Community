@@ -24,6 +24,8 @@ namespace Sekai
 
 		public const int MusicInfoDisplayModeCustomScore = 1;
 
+		public const int MusicInfoDisplayModeSkip = 2;
+
 		public const int CustomMusicScoreBackgroundModeJacket = 0;
 
 		public const int CustomMusicScoreBackgroundMode2DMV = 1;
@@ -161,6 +163,16 @@ namespace Sekai
 			get
 			{
 				return (CustomMusicScoreMusicInfoDisplayMode ?? MusicInfoDisplayModeCustomScore) == MusicInfoDisplayModeCustomScore;
+			}
+		}
+
+		[IgnoreMember]
+		[JsonIgnore]
+		public bool SkipsCustomMusicScoreMusicInfo
+		{
+			get
+			{
+				return (CustomMusicScoreMusicInfoDisplayMode ?? MusicInfoDisplayModeCustomScore) == MusicInfoDisplayModeSkip;
 			}
 		}
 
