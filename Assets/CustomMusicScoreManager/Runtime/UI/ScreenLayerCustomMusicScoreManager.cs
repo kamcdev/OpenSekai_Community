@@ -1167,13 +1167,111 @@ namespace Sekai.CustomMusicScoreManager
 
 		private void OnRestoreButtonClick()
 		{
-			string[] paths = StandaloneFileBrowser.OpenFilePanel("选择备份文件", "", "zip", false);
-			if (paths == null || paths.Length == 0 || string.IsNullOrEmpty(paths[0]))
+			// Use native file picker for all non-Standalone platforms
+			// StandaloneFileBrowser is unreliable on Android
+			if (Application.platform == RuntimePlatform.WindowsEditor ||
+			    Application.platform == RuntimePlatform.WindowsPlayer ||
+			    Application.platform == RuntimePlatform.OSXEditor ||
+			    Application.platform == RuntimePlatform.OSXPlayer ||
+			    Application.platform == RuntimePlatform.LinuxEditor ||
+			    Application.platform == RuntimePlatform.LinuxPlayer)
 			{
+				string[] paths = null;
+				try
+				{
+					paths = StandaloneFileBrowser.OpenFilePanel("选择备份文件", "", "zip", false);
+				}
+				catch (Exception ex)
+				{
+					Debug.LogWarning("[UI] StandaloneFileBrowser failed: " + ex.Message);
+				}
+
+				if (paths != null && paths.Length > 0 && !string.IsNullOrEmpty(paths[0]))
+				{
+					_restoreBackupPath = paths[0];
+					ShowRestoreScopeDialog();
+					return;
+				}
+				// Fallback to native picker if StandaloneFileBrowser failed or returned empty
+			}
+
+#if UNITY_ANDROID
+			// Use ShareExportHelper for Android
+			OpenFileForRestore();
+#else
+			// Use NativeFilePicker for iOS and other platforms
+			PickNativeFileForRestore();
+#endif
+		}
+
+		private void PickNativeFileForRestore()
+		{
+			if (NativeFilePicker.IsFilePickerBusy())
+			{
+				SetStatus("文件选择器已经打开。");
 				return;
 			}
 
-			_restoreBackupPath = paths[0];
+			Debug.Log("[UI] PickNativeFileForRestore: Calling NativeFilePicker.PickFile");
+			SetStatus("选择备份文件...");
+			NativeFilePicker.PickFile(path =>
+			{
+				if (this == null)
+				{
+					return;
+				}
+
+				Debug.Log("[UI] PickNativeFileForRestore callback, path: " + path);
+				if (string.IsNullOrEmpty(path))
+				{
+					SetStatus("选择备份文件已取消。");
+					return;
+				}
+
+				_restoreBackupPath = path;
+				ShowRestoreScopeDialog();
+			}, CreateNativeFileTypes("zip"));
+		}
+
+#if UNITY_ANDROID
+		private void OpenFileForRestore()
+		{
+			Debug.Log("[UI] OpenFileForRestore: Calling ShareExportHelper.OpenFile");
+			SetStatus("选择备份文件...");
+			using (AndroidJavaClass helper = new AndroidJavaClass("com.opensekai.ShareExportHelper"))
+			{
+				helper.CallStatic("OpenFile", gameObject.name, "OnOpenFileForRestoreComplete");
+			}
+		}
+
+		private void OnOpenFileForRestoreComplete(string result)
+		{
+			Debug.Log("[UI] OnOpenFileForRestoreComplete: " + result);
+			if (string.IsNullOrEmpty(result))
+			{
+				SetStatus("选择备份文件已取消。");
+				return;
+			}
+
+			if (result.StartsWith("success:"))
+			{
+				_restoreBackupPath = result.Substring("success:".Length);
+				Debug.Log("[UI] File restored to: " + _restoreBackupPath);
+				ShowRestoreScopeDialog();
+			}
+			else if (result == "cancelled")
+			{
+				SetStatus("选择备份文件已取消。");
+			}
+			else
+			{
+				SetStatus("选择文件失败：" + result);
+			}
+		}
+#endif
+
+		private void ShowRestoreScopeDialog()
+		{
 			// Use localization keys for button labels: "RESTORE_SCORES" and "RESTORE_ALL"
 			// Use message key "MSG_RESTORE_SCOPE" for dialog body text
 			ScreenManager.Instance?.Show2ButtonDialog<Common2ButtonDialog>(

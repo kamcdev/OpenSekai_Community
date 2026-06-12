@@ -1,21 +1,27 @@
 package com.opensekai;
 
 import android.app.Activity;
+import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.net.Uri;
 import android.provider.MediaStore;
+import android.provider.OpenableColumns;
 import com.unity3d.player.UnityPlayer;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.io.OutputStream;
 
 public class ShareExportHelper {
     private static final int REQUEST_CODE_SAVE = 2001;
+    private static final int REQUEST_CODE_OPEN = 2002;
     private static String pendingSourcePath;
     private static String pendingCallbackObject;
     private static String pendingCallbackMethod;
+    private static String pendingOpenCallbackObject;
+    private static String pendingOpenCallbackMethod;
 
     public static void SaveAndShare(String sourcePath, String callbackObject, String callbackMethod) {
         pendingSourcePath = sourcePath;
@@ -28,6 +34,17 @@ public class ShareExportHelper {
         intent.setType("application/zip");
         intent.putExtra(Intent.EXTRA_TITLE, new File(sourcePath).getName());
         activity.startActivityForResult(intent, REQUEST_CODE_SAVE);
+    }
+
+    public static void OpenFile(String callbackObject, String callbackMethod) {
+        pendingOpenCallbackObject = callbackObject;
+        pendingOpenCallbackMethod = callbackMethod;
+
+        Activity activity = UnityPlayer.currentActivity;
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("application/zip");
+        activity.startActivityForResult(intent, REQUEST_CODE_OPEN);
     }
 
     public static boolean OnActivityResult(int requestCode, int resultCode, Intent data) {
@@ -51,6 +68,26 @@ public class ShareExportHelper {
                 clearPending();
                 return true;
             }
+        } else if (requestCode == REQUEST_CODE_OPEN) {
+            if (resultCode == Activity.RESULT_OK && data != null) {
+                Uri uri = data.getData();
+                if (uri != null && pendingOpenCallbackObject != null && pendingOpenCallbackMethod != null) {
+                    try {
+                        String destPath = copyFileFromUri(uri);
+                        UnityPlayer.UnitySendMessage(pendingOpenCallbackObject, pendingOpenCallbackMethod, "success:" + destPath);
+                        clearPendingOpen();
+                        return true;
+                    } catch (Exception e) {
+                        UnityPlayer.UnitySendMessage(pendingOpenCallbackObject, pendingOpenCallbackMethod, "error:" + e.getMessage());
+                        clearPendingOpen();
+                        return true;
+                    }
+                }
+            } else {
+                UnityPlayer.UnitySendMessage(pendingOpenCallbackObject, pendingOpenCallbackMethod, "cancelled");
+                clearPendingOpen();
+                return true;
+            }
         }
         return false;
     }
@@ -59,6 +96,52 @@ public class ShareExportHelper {
         pendingSourcePath = null;
         pendingCallbackObject = null;
         pendingCallbackMethod = null;
+    }
+
+    private static void clearPendingOpen() {
+        pendingOpenCallbackObject = null;
+        pendingOpenCallbackMethod = null;
+    }
+
+    private static String copyFileFromUri(Uri sourceUri) throws Exception {
+        Activity activity = UnityPlayer.currentActivity;
+        ContentResolver resolver = activity.getContentResolver();
+
+        // Get file name from URI
+        String fileName = null;
+        try (android.database.Cursor cursor = resolver.query(sourceUri, null, null, null, null)) {
+            if (cursor != null && cursor.moveToFirst()) {
+                int nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                if (nameIndex >= 0) {
+                    fileName = cursor.getString(nameIndex);
+                }
+            }
+        }
+        if (fileName == null) {
+            fileName = "restored_backup.zip";
+        }
+
+        // Create temp file in cache directory
+        File cacheDir = activity.getExternalFilesDir(null);
+        if (cacheDir == null) {
+            cacheDir = activity.getCacheDir();
+        }
+        File destFile = new File(cacheDir, fileName);
+
+        // Copy content to temp file
+        try (InputStream inputStream = resolver.openInputStream(sourceUri);
+             FileOutputStream outputStream = new FileOutputStream(destFile)) {
+            if (inputStream == null) {
+                throw new Exception("Failed to open input stream for URI");
+            }
+            byte[] buffer = new byte[8192];
+            int length;
+            while ((length = inputStream.read(buffer)) > 0) {
+                outputStream.write(buffer, 0, length);
+            }
+        }
+
+        return destFile.getAbsolutePath();
     }
 
     private static void copyFileToUri(String sourcePath, Uri destUri) throws Exception {
