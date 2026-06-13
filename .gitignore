@@ -111,4 +111,5 @@ InitTestScene*.unity*
 /[Aa]ssets/[Ss]ceneDependencyCache*
 /Assets/StreamingAssets/data
 
-*error*.*
+*error*.txt
+*error*.log

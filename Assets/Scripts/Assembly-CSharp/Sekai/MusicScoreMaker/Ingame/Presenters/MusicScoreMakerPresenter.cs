@@ -89,6 +89,9 @@ namespace Sekai.MusicScoreMaker.Ingame.Presenters
 			public MusicScoreNoteBase TargetNote;
 		}
 
+		// Flag to signal that we want to open settings after returning to top
+		public static bool _isReturningToEditorWithSettings = false;
+
 		[StructLayout((LayoutKind)0, Size = 1)]
 		private struct NoteTicksComparer : IComparer<MusicScoreNoteBase>
 		{
@@ -7869,8 +7872,57 @@ namespace Sekai.MusicScoreMaker.Ingame.Presenters
 
 		private void OpenToolOptionDialog(OpenToolOptionDialogEvent e)
 		{
-			// TODO(original): restore MusicScoreMakerOptionDialog window creation.
-			MusicScoreMakerSettingsManager.SaveSettingData();
+			// Show confirmation dialog before opening system settings
+			ScreenManager.Instance?.Show2ButtonDialog<Common2ButtonDialog>(
+				DialogType.Common2ButtonDialog,
+				null,
+				"WORD_DECIDE",
+				"WORD_CANCEL",
+				OnConfirmOpenSystemSettings,
+				null,
+				DisplayLayerType.Layer_Dialog,
+				DialogSize.Manual,
+				allowCloseExternal: true)?.SetMessageBodyText("是否打开设置？");
+		}
+
+		private void OnConfirmOpenSystemSettings()
+		{
+			// Save current editor state for restoration after settings closed
+			MusicScoreMakerData data = CurrentData();
+			if (_model != null && data != null)
+			{
+				// Store the boot data in a separate field that won't be cleared when returning to top
+				MusicScoreMakerEntryPoint.BootDataForSettingsReturn = new ScreenLayerMusicScoreMaker.BootArg
+				{
+					musicId = _model.MusicId,
+					difficulty = _model.Difficulty,
+					vocalId = _model.VocalId,
+					baseMusicScoreId = _model.BaseMusicScoreId,
+					baseMusicDifficultyId = _model.BaseMusicDifficultyId,
+					MusicScoreMakerData = DeepCopyHelper.DeepCopy(data),
+					FocusTicks = _model.FocusTicks,
+					QuantizeDivision = _model.QuantizeDivision,
+					FromScreenType = MenuScreenType.MusicScoreMakerTop,
+					LastSavedDataHash = _model.GetSavedDataHash(),
+					LastSavedDraftSlotNo = _model.LastSavedDraftSlotNo,
+					LastSavedDraft = _model.LastSavedDraft,
+					FullComboDataHash = _model.GetFullComboDataHash(),
+					MusicScoreDataHashAtTestPlay = _model.ComputeFullComboHash(),
+					IsReturnFromTestPlay = false,
+					IsFromFullComboCheck = false,
+					IsAllNotesIncludedInTestPlay = false,
+					CurrentMusicScoreScale = _model.CurrentMusicScoreScale,
+					CustomMusicScoreEntry = _model.CustomMusicScoreEntry
+				};
+			}
+
+			// Signal that we want to open settings after returning to top
+			// The MusicScoreMakerEntryPoint.Start() will check this and open settings
+			_isReturningToEditorWithSettings = true;
+
+			// Return to top (will open settings overlay when it loads)
+			MusicScoreMakerUtility.RequestTransitionToOutGame(MenuScreenType.MusicScoreMakerTop);
+			Dispose();
 		}
 
 		private void OnEnableInvalidPlacementCheckChanged(EnableInvalidPlacementCheckChangedEvent evt)

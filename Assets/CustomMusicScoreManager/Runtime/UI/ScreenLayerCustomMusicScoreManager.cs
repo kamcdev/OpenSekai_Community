@@ -509,6 +509,106 @@ namespace Sekai.CustomMusicScoreManager
 			_settingsOverlay.SetAsLastSibling();
 		}
 
+		private void CloseSettingsAndReturnToEditor()
+		{
+			UnityEngine.Debug.Log("CloseSettingsAndReturnToEditor called");
+			if (_settingsOverlay != null)
+			{
+				_settingsOverlay.gameObject.SetActive(false);
+			}
+			UnityEngine.Debug.Log("Settings closed, now returning to editor");
+			// Return to editor with saved state
+			OpenEditorAfterSettingsClosed();
+		}
+
+		public static void OpenSettingsAfterReturnFromEditor()
+		{
+			UnityEngine.Debug.Log("OpenSettingsAfterReturnFromEditor called");
+			// Open settings (this method is called on the instance itself)
+			var screenLayer = UnityEngine.Object.FindObjectOfType<ScreenLayerCustomMusicScoreManager>();
+			UnityEngine.Debug.Log("ScreenLayer found: " + (screenLayer != null));
+			if (screenLayer != null)
+			{
+				screenLayer.OpenSettings();
+				UnityEngine.Debug.Log("Settings opened");
+				// Override buttons in the settings overlay by finding them recursively
+				OverrideButtonsInOverlay(screenLayer);
+			}
+		}
+
+		private static void OverrideButtonsInOverlay(ScreenLayerCustomMusicScoreManager screenLayer)
+		{
+			if (screenLayer._settingsOverlay == null) return;
+
+			// Find all buttons in the overlay
+			var buttons = screenLayer._settingsOverlay.GetComponentsInChildren<UnityEngine.UI.Button>(true);
+			UnityEngine.Debug.Log("Found " + buttons.Length + " buttons in overlay");
+
+			foreach (var button in buttons)
+			{
+				string buttonName = button.name;
+				UnityEngine.Debug.Log("Button name: " + buttonName);
+
+				// Try to find text to determine which button this is
+				string buttonText = "";
+				var textComponent = button.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+				if (textComponent != null)
+				{
+					buttonText = textComponent.text;
+				}
+				var uiText = button.GetComponentInChildren<UnityEngine.UI.Text>();
+				if (uiText != null)
+				{
+					buttonText = uiText.text;
+				}
+				UnityEngine.Debug.Log("Button text: " + buttonText);
+
+				button.onClick.RemoveAllListeners();
+				if (buttonName == "CancelButton" || buttonText == "取消" || buttonText == "Cancel")
+				{
+					button.onClick.AddListener(() => screenLayer.CloseSettingsAndReturnToEditor());
+					UnityEngine.Debug.Log("Cancel button listener added");
+				}
+				else if (buttonName == "SaveButton" || buttonText == "保存" || buttonText == "Save")
+				{
+					button.onClick.AddListener(() => screenLayer.SaveSettingsAndReturnToEditor());
+					UnityEngine.Debug.Log("Save button listener added");
+				}
+			}
+		}
+
+		private void SaveSettingsAndReturnToEditor()
+		{
+			UnityEngine.Debug.Log("SaveSettingsAndReturnToEditor called");
+			// Save all settings (this includes custom music score settings)
+			SaveSettings();
+			UnityEngine.Debug.Log("Settings saved, now returning to editor");
+			// Close settings and return to editor
+			CloseSettingsAndReturnToEditor();
+		}
+
+		private void OpenEditorAfterSettingsClosed()
+		{
+			UnityEngine.Debug.Log("OpenEditorAfterSettingsClosed called");
+			// Get the saved state before clearing
+			var savedBootData = Sekai.MusicScoreMaker.Ingame.Presenters.MusicScoreMakerEntryPoint.BootDataForSettingsReturn;
+			UnityEngine.Debug.Log("SavedBootData: " + (savedBootData != null));
+
+			// Clear the saved state to prevent reuse
+			Sekai.MusicScoreMaker.Ingame.Presenters.MusicScoreMakerEntryPoint.BootDataForSettingsReturn = null;
+
+			// Push the editor with saved state
+			if (savedBootData != null)
+			{
+				UnityEngine.Debug.Log("Pushing editor screen");
+				ScreenManager.Instance?.PushUIScreen(MenuScreenType.MusicScoreMaker, savedBootData, false);
+			}
+			else
+			{
+				UnityEngine.Debug.LogWarning("No saved boot data found, cannot return to editor");
+			}
+		}
+
 		private void CloseSettings()
 		{
 			if (_settingsOverlay != null)

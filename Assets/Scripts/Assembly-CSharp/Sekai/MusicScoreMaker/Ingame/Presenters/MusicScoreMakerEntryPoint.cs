@@ -1,3 +1,5 @@
+using System;
+using System.Reflection;
 using CP;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -19,6 +21,9 @@ namespace Sekai.MusicScoreMaker.Ingame.Presenters
 		}
 
 		public static MusicScoreMakerBootData BootData { get; set; }
+
+		// Separate field to store boot data when returning from editor to settings
+		public static ScreenLayerMusicScoreMaker.BootArg BootDataForSettingsReturn { get; set; }
 
 		public ApplicationLocalSettings LocalSettings { get; set; }
 
@@ -84,13 +89,72 @@ namespace Sekai.MusicScoreMaker.Ingame.Presenters
 				LiveTransitioner.SafeForceFinish(null);
 			}
 
+			// Check if we need to open settings (returning from editor)
+			bool shouldOpenSettings = MusicScoreMakerPresenter._isReturningToEditorWithSettings;
+			if (shouldOpenSettings)
+			{
+				MusicScoreMakerPresenter._isReturningToEditorWithSettings = false;
+			}
+
 			if (bootArg == null)
 			{
 				ScreenManager.Instance.PushUIScreen(MenuScreenType.MusicScoreMakerTop, false);
+				// If returning from editor with saved state, open settings overlay
+				if (shouldOpenSettings)
+				{
+					// Delay opening settings to allow the screen to initialize
+					ScheduleOpenSettingsAfterPush();
+				}
 				return;
 			}
 
 			ScreenManager.Instance.PushUIScreen(MenuScreenType.MusicScoreMaker, bootArg, false);
+		}
+
+		private static void ScheduleOpenSettingsAfterPush()
+		{
+			// Delay the call to allow the screen to fully initialize
+			// Use a coroutine-like approach via MonoBehaviour
+			var presenter = new GameObject("SettingsOpener").AddComponent<SettingsOpenerHelper>();
+			UnityEngine.Object.DontDestroyOnLoad(presenter);
+			presenter.OpenSettingsAfterDelay();
+		}
+
+		private class SettingsOpenerHelper : UnityEngine.MonoBehaviour
+		{
+			public void OpenSettingsAfterDelay()
+			{
+				StartCoroutine(OpenSettingsCoroutine());
+			}
+
+			private System.Collections.IEnumerator OpenSettingsCoroutine()
+			{
+				UnityEngine.Debug.Log("SettingsOpenerHelper: Starting coroutine");
+				yield return null; // Wait one frame
+				yield return null; // Wait another frame for the screen to initialize
+				UnityEngine.Debug.Log("SettingsOpenerHelper: After delay, trying to find ScreenLayerCustomMusicScoreManager");
+
+				// Use FindObjectsOfTypeAll to find the screen layer regardless of type name
+				var allObjects = UnityEngine.Resources.FindObjectsOfTypeAll<UnityEngine.Component>();
+				foreach (var obj in allObjects)
+				{
+					string typeName = obj.GetType().Name;
+					if (typeName == "ScreenLayerCustomMusicScoreManager" || typeName.Contains("CustomMusicScore") && typeName.Contains("Manager"))
+					{
+						UnityEngine.Debug.Log("Found potential manager: " + typeName + " on object: " + obj.name);
+						// Check if it has the method we need
+						var method = obj.GetType().GetMethod("OpenSettingsAfterReturnFromEditor", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+						if (method != null)
+						{
+							method.Invoke(null, null);
+							UnityEngine.Debug.Log("Successfully invoked OpenSettingsAfterReturnFromEditor via component");
+							break;
+						}
+					}
+				}
+
+				Destroy(gameObject);
+			}
 		}
 
 		protected override void ExitScene()
