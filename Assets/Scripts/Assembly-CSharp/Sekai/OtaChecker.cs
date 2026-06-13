@@ -19,6 +19,7 @@ namespace Sekai
         protected override void OnInitialize()
         {
             base.OnInitialize();
+            Debug.Log("fuck Android");
             Debug.Log("[OtaChecker] OnInitialize called");
             ReadLocalVersion();
         }
