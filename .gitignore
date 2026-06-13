@@ -113,3 +113,6 @@ InitTestScene*.unity*
 
 *error*.txt
 *error*.log
+
+# API keys for cloud community features to be added to jsfttool later
+jsofttool.prop

@@ -41,6 +41,8 @@ namespace Sekai.MusicScoreMaker.Ingame.Presenters
 			AssetBundleMetaManager.Instance.Initialize();
 			AssetBundleManager.Instance.Initialize();
 			SoundUtility.SetupGlobalSeSettings(GlobalSeSettings.Normal);
+
+			OtaChecker.Instance.CheckForUpdates();
 		}
 
 		protected override void Start()
