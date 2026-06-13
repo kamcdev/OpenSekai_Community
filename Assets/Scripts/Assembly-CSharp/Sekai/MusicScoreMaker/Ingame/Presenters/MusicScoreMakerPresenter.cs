@@ -7058,8 +7058,11 @@ namespace Sekai.MusicScoreMaker.Ingame.Presenters
 				bootData.MusicData.CustomPlayLevel = difficulty?.playLevel ?? _model?.CustomMusicScoreEntry?.Manifest.playLevel ?? 0;
 				bootData.MusicData.MusicScore = musicScore;
 				bootData.MusicData.StartMusicTimeMs = MusicScoreMakerSettingsManager.CalcStartMusicTimeMs(bootData, Mathf.FloorToInt(_model?.FillerSec ?? 0f));
-				// Set PlayStartEffectEnabled to false for test play mode or when skip mode is enabled
-				bootData.MusicData.PlayStartEffectEnabled = !(bootData.LiveSettingData?.SkipsCustomMusicScoreMusicInfo ?? false);
+				// Test play mode always skips MusicInfo
+				// Normal play with skip mode setting also skips MusicInfo
+				// Otherwise uses normal setting (PlayStartEffectEnabled = true)
+				bool skipMusicInfo = bootData.MusicData.IsTestPlay || (bootData.LiveSettingData?.SkipsCustomMusicScoreMusicInfo ?? false);
+				bootData.MusicData.PlayStartEffectEnabled = !skipMusicInfo;
 			}
 
 			CustomMusicScoreEntry entry = _model?.CustomMusicScoreEntry;
@@ -7523,8 +7526,16 @@ namespace Sekai.MusicScoreMaker.Ingame.Presenters
 
 		private void ShowClearNotesAndSpeedEventsDialog(ShowClearNotesAndSpeedEventsDialogEvent e)
 		{
-			// TODO(original): restore confirmation dialog.
-			ClearNotesAndSpeedEvents(new ClearNotesAndSpeedEventsEvent());
+			ScreenManager.Instance?.Show2ButtonDialog<Common2ButtonDialog>(
+				DialogType.Common2ButtonDialog,
+				null,
+				"WORD_DECIDE",
+				"WORD_CANCEL",
+				() => ClearNotesAndSpeedEvents(new ClearNotesAndSpeedEventsEvent()),
+				null,
+				DisplayLayerType.Layer_Dialog,
+				DialogSize.Manual,
+				allowCloseExternal: true)?.SetMessageBodyText("是否确认重置谱面？将会清空所有音符\n可使用撤销恢复");
 		}
 
 		private void SaveAndPostMusicScore(SaveAndPostMusicScoreEvent e)
